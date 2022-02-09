@@ -1,0 +1,236 @@
+ui <- dashboardPage(
+  
+  # Título
+  dashboardHeader(title = "Painel PED"),
+  
+  # Menu
+  dashboardSidebar(
+    sidebarMenu(
+      menuItem("Tabela 1", tabName = "tab1", icon = icon("table")),
+      menuItem("Tabela 2", tabName = "tab2", icon = icon("table")),
+      menuItem("Tabela 3", tabName = "tab3", icon = icon("table")),
+      menuItem("Tabela 4", tabName = "tab4", icon = icon("table")),
+      menuItem("Tabela 5", tabName = "tab5", icon = icon("table")),
+      menuItem("Tabela 6", tabName = "tab6", icon = icon("table")),
+      menuItem("Tabela 7", tabName = "tab7", icon = icon("table")),
+      menuItem("Tabela 8", tabName = "tab8", icon = icon("table")),
+      menuItem("Tabela 9", tabName = "tab9", icon = icon("table")),
+      menuItem("Tabela 10", tabName = "tab10", icon = icon("table")),
+      menuItem("Tabela 11", tabName = "tab11", icon = icon("table")),
+      menuItem("Tabela 12", tabName = "tab12", icon = icon("table")),
+      menuItem("Tabela 13", tabName = "tab13", icon = icon("table")),
+      menuItem("Tabela 14", tabName = "tab14", icon = icon("table")),
+      menuItem("Tabela 15", tabName = "tab15", icon = icon("table")),
+      menuItem("Tabela 16", tabName = "tab16", icon = icon("table")),
+      menuItem("Tabela 17", tabName = "tab17", icon = icon("table")),
+      menuItem("Tabela 18", tabName = "tab18", icon = icon("table")),
+      menuItem("Tabela 19", tabName = "tab19", icon = icon("table")),
+      menuItem("Tabela 20", tabName = "tab20", icon = icon("table")),
+      menuItem("Tabela 21", tabName = "tab21", icon = icon("table"))
+      )
+    
+  ),
+  
+  # Tabela 1
+  dashboardBody(
+    tabItems(
+      tabItem(tabName = "tab1",
+              fluidRow(
+                box(width = 2,
+                    selectInput(inputId = "select_mes", label = "Ano e Mês", 
+                                choices = unique(tb1$AAMM), 
+                                selected = tail(tb1$AAMM,1))),
+                valueBoxOutput(width = 2, outputId = "PIA"),
+                valueBoxOutput(width = 2, outputId = "PEA"),
+                valueBoxOutput(width = 2, outputId = "Ocupado"),
+                valueBoxOutput(width = 2, outputId = "Desempregado"),
+                valueBoxOutput(width = 2, outputId = "Inativo"),
+                valueBoxOutput(width = 2, outputId = "Total")
+              ),
+              fluidRow(
+                tableOutput(outputId = "tabela1")
+              )
+      ),
+      # Tabela 2
+      tabItem(
+        tabName = "tab2",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_mes", label = "Ano e Mês", 
+                          choices = unique(tb2$AAMM), 
+                          selected = tail(tb2$AAMM,1))),
+        )
+      ),
+      # Tabela 3
+      tabItem(
+        tabName = "tab3",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_mes", label = "Ano e Mês", 
+                          choices = unique(tb3$AAMM), 
+                          selected = tail(tb3$AAMM,1)))
+
+        )
+      ),
+      # Tabela 4
+      tabItem(
+        tabName = "tab4",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_mes", label = "Ano e Mês", 
+                          choices = unique(tb4$AAMM), 
+                          selected = tail(tb4$AAMM,1)))
+         
+        )
+      ),
+      # Tabela 5
+      tabItem(
+        tabName = "tab5",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_mes", label = "Ano e Mês", 
+                          choices = unique(tb5$AAMM), 
+                          selected = tail(tb5$AAMM,1)))
+          
+        )
+      ),
+      # Tabela 6
+      tabItem(
+        tabName = "tab6",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_mes", label = "Ano e Mês", 
+                          choices = unique(tb6$AAMM), 
+                          selected = tail(tb6$AAMM,1)))
+        )
+      ),
+      # Tabela 7
+      tabItem(
+        tabName = "tab7",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_mes", label = "Ano e Mês", 
+                          choices = unique(tb7$AAMM), 
+                          selected = tail(tb7$AAMM,1)))
+          
+        )
+      ),
+      # Tabela 8
+      tabItem(
+        tabName = "tab8",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_mes", label = "Ano e Mês", 
+                          choices = unique(tb8$AAMM), 
+                          selected = tail(tb8$AAMM,1)))
+        )
+      ),
+      # Tabela 9
+      tabItem(
+        tabName = "tab9",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_mes", label = "Ano e Mês", 
+                          choices = unique(tb9$AAMM), 
+                          selected = tail(tb9$AAMM,1)))
+        )
+      ),
+      # Tabela 10
+      tabItem(
+        tabName = "tab10",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_mes", label = "Ano e Mês", 
+                          choices = unique(tb10$AAMM), 
+                          selected = tail(tb10$AAMM,1)))
+        )
+      ),
+      # Tabela 11
+      tabItem(
+        tabName = "tab11",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_mes", label = "Ano e Mês", 
+                          choices = unique(tb11$AAMM), 
+                          selected = tail(tb11$AAMM,1)))
+        )
+      ),
+      # Tabela 12
+      tabItem(
+        tabName = "tab12",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_mes", label = "Ano e Mês", 
+                          choices = unique(tb12$AAMM), 
+                          selected = tail(tb12$AAMM,1)))
+        )
+      ),
+      # Tabela 13
+      tabItem(
+        tabName = "tab13",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_mes", label = "Ano e Mês", 
+                          choices = unique(tb13$AAMM), 
+                          selected = tail(tb13$AAMM,1)))
+        )
+      ),
+      # Tabela 14
+      tabItem(
+        tabName = "tab14",
+        fluidRow(
+         
+        )
+      ),
+      # Tabela 15
+      tabItem(
+        tabName = "tab15",
+      
+        )
+      ),
+    # Tabela 16
+      tabItem(
+        tabName = "tab16",
+        fluidRow(
+         
+        )
+      ),
+    # Tabela 17
+      tabItem(
+        tabName = "tab17",
+        fluidRow(
+          
+        )
+      ),
+    # Tabela 18
+      tabItem(
+        tabName = "tab18",
+        fluidRow(
+          
+        )
+      ),
+    # Tabela 19
+      tabItem(
+        tabName = "tab19",
+        fluidRow(
+         
+        )
+      ),
+    # Tabela 20
+      tabItem(
+        tabName = "tab20",
+        fluidRow(
+         
+        )
+      ),
+    # Tabela 21
+      tabItem(
+        tabName = "tab21",
+        fluidRow(
+          
+        )
+      )
+    )
+  )
+)
+
