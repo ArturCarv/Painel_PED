@@ -1,1 +1,137 @@
 
+
+server <- function(input, output) {
+  
+  # Tabela 1
+  output$tabela1 <- renderTable({
+    tb1
+  })
+  
+  output$PIA <- renderValueBox({
+    valueBox(
+      paste0(tb1$PIA[tb1$AAMM == input$select_mes]," (",  round(tb1$ind_pia[tb1$AAMM == input$select_mes],1), ")"), "População em Idade Ativa",color = "blue"
+    )
+  })
+  
+  output$PEA <- renderValueBox({
+    valueBox(
+      paste0(tb1$PEA[tb1$AAMM == input$select_mes]," (",  round(tb1$ind_pea[tb1$AAMM == input$select_mes],1), ")"), "População Economicamente Ativa",color = "blue"
+    )
+  })
+  
+  output$Ocupado <- renderValueBox({
+    valueBox(
+      paste0(tb1$Ocupado[tb1$AAMM == input$select_mes]," (",  round(tb1$ind_ocup[tb1$AAMM == input$select_mes],1), ")"), "Ocupados",color = "blue"
+    )
+  })
+  
+  output$Desempregado <- renderValueBox({
+    valueBox(
+      paste0(tb1$Desempregado[tb1$AAMM == input$select_mes]," (",  round(tb1$ind_desemp[tb1$AAMM == input$select_mes],1), ")"), "Desempregados",color = "blue"
+    )
+  })
+  
+  output$Inativo <- renderValueBox({
+    valueBox(
+      paste0(tb1$Inativo[tb1$AAMM == input$select_mes]," (",  round(tb1$ind_inat[tb1$AAMM == input$select_mes],1), ")"), "Inativos",color = "blue"
+    )
+  })
+  
+  output$Total <- renderValueBox({
+    valueBox(
+      tb1$pop_total[tb1$AAMM == input$select_mes], "População Total",color = "blue"
+    )
+  })
+  
+  output$tabela1 <- renderTable({
+    tab1
+  })
+  
+  
+  output$scatter_1 <- renderPlotly({
+    
+  })
+  
+  # Tabela 2
+  output$scatter_2 <- renderPlotly({
+    plot <- plot.scatter(df, "Petal.Width", "Sepal.Width", "Species", "Largura de Pétala", "Largura de Sépala", "Espécie")
+    ggplotly(plot)
+  })
+  # Tabela 3
+  output$scatter_3 <- renderPlotly({
+    
+  })
+  # Tabela 4
+  output$scatter_4 <- renderPlotly({
+    
+  })
+  # Tabela 5
+  output$scatter_5 <- renderPlotly({
+    
+  })
+  # Tabela 6
+  output$scatter_6 <- renderPlotly({
+    
+  })
+  # Tabela 7
+  output$scatter_7 <- renderPlotly({
+    
+  })
+  # Tabela 8
+  output$scatter_8 <- renderPlotly({
+    
+  })
+  # Tabela 9
+  output$scatter_9 <- renderPlotly({
+    
+  })
+  # Tabela 10
+  output$scatter_10 <- renderPlotly({
+    
+  })
+  # Tabela 11
+  output$scatter_11 <- renderPlotly({
+    
+  })
+  # Tabela 12
+  output$scatter_12 <- renderPlotly({
+    
+  })
+  # Tabela 13
+  output$scatter_13 <- renderPlotly({
+    
+  })
+  # Tabela 14
+  output$scatter_14 <- renderPlotly({
+    
+  })
+  # Tabela 15
+  output$scatter_15 <- renderPlotly({
+    
+  })
+  # Tabela 16
+  output$scatter_16 <- renderPlotly({
+    
+  })
+  # Tabela 17
+  output$scatter_17 <- renderPlotly({
+    
+  })
+  # Tabela 18
+  output$scatter_18 <- renderPlotly({
+    
+  })
+  # Tabela 19
+  output$scatter_19 <- renderPlotly({
+    
+  })
+  # Tabela 20
+  output$scatter_20 <- renderPlotly({
+    
+  })
+  # Tabela 21
+  output$scatter_21 <- renderPlotly({
+    tb21
+  })
+}
+
