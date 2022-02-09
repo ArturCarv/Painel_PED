@@ -1,0 +1,388 @@
+##################
+### Painel PED ###
+##################
+
+# Carregando pacotes
+pacman::p_load(shiny, shinydashboard, ggplot2, plotly)
+
+# OBS: necessário rodar o PED TAXAS E O PED RENDA
+
+# Ui
+
+ui <- dashboardPage(
+  
+  # Título
+  dashboardHeader(title = "Painel PED"),
+  
+  # Menu
+  dashboardSidebar(
+    sidebarMenu(
+      menuItem("Tabela 1", tabName = "tab1", icon = icon("table")),
+      menuItem("Tabela 2", tabName = "tab2", icon = icon("table")),
+      menuItem("Tabela 3", tabName = "tab3", icon = icon("table")),
+      menuItem("Tabela 4", tabName = "tab4", icon = icon("table")),
+      menuItem("Tabela 5", tabName = "tab5", icon = icon("table")),
+      menuItem("Tabela 6", tabName = "tab6", icon = icon("table")),
+      menuItem("Tabela 7", tabName = "tab7", icon = icon("table")),
+      menuItem("Tabela 8", tabName = "tab8", icon = icon("table")),
+      menuItem("Tabela 9", tabName = "tab9", icon = icon("table")),
+      menuItem("Tabela 10", tabName = "tab10", icon = icon("table")),
+      menuItem("Tabela 11", tabName = "tab11", icon = icon("table")),
+      menuItem("Tabela 12", tabName = "tab12", icon = icon("table")),
+      menuItem("Tabela 13", tabName = "tab13", icon = icon("table")),
+      menuItem("Tabela 14", tabName = "tab14", icon = icon("table")),
+      menuItem("Tabela 15", tabName = "tab15", icon = icon("table")),
+      menuItem("Tabela 16", tabName = "tab16", icon = icon("table")),
+      menuItem("Tabela 17", tabName = "tab17", icon = icon("table")),
+      menuItem("Tabela 18", tabName = "tab18", icon = icon("table")),
+      menuItem("Tabela 19", tabName = "tab19", icon = icon("table")),
+      menuItem("Tabela 20", tabName = "tab20", icon = icon("table")),
+      menuItem("Tabela 21", tabName = "tab21", icon = icon("table"))
+      )
+    
+  ),
+  
+  # Tabela 1
+  dashboardBody(
+    tabItems(
+      tabItem(tabName = "tab1",
+              fluidRow(
+                box(width = 2,
+                    selectInput(inputId = "select_mes", label = "Ano e Mês", 
+                                choices = unique(tb1$AAMM), 
+                                selected = tail(tb1$AAMM,1))),
+                valueBoxOutput(width = 2, outputId = "PIA"),
+                valueBoxOutput(width = 2, outputId = "PEA"),
+                valueBoxOutput(width = 2, outputId = "Ocupado"),
+                valueBoxOutput(width = 2, outputId = "Desempregado"),
+                valueBoxOutput(width = 2, outputId = "Inativo"),
+                valueBoxOutput(width = 2, outputId = "Total")
+              ),
+              fluidRow(
+                tableOutput(outputId = "tabela1")
+              )
+      ),
+      # Tabela 2
+      tabItem(
+        tabName = "tab2",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_mes", label = "Ano e Mês", 
+                          choices = unique(tb2$AAMM), 
+                          selected = tail(tb2$AAMM,1))),
+        )
+      ),
+      # Tabela 3
+      tabItem(
+        tabName = "tab3",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_mes", label = "Ano e Mês", 
+                          choices = unique(tb3$AAMM), 
+                          selected = tail(tb3$AAMM,1)))
+
+        )
+      ),
+      # Tabela 4
+      tabItem(
+        tabName = "tab4",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_mes", label = "Ano e Mês", 
+                          choices = unique(tb4$AAMM), 
+                          selected = tail(tb4$AAMM,1)))
+         
+        )
+      ),
+      # Tabela 5
+      tabItem(
+        tabName = "tab5",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_mes", label = "Ano e Mês", 
+                          choices = unique(tb5$AAMM), 
+                          selected = tail(tb5$AAMM,1)))
+          
+        )
+      ),
+      # Tabela 6
+      tabItem(
+        tabName = "tab6",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_mes", label = "Ano e Mês", 
+                          choices = unique(tb6$AAMM), 
+                          selected = tail(tb6$AAMM,1)))
+        )
+      ),
+      # Tabela 7
+      tabItem(
+        tabName = "tab7",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_mes", label = "Ano e Mês", 
+                          choices = unique(tb7$AAMM), 
+                          selected = tail(tb7$AAMM,1)))
+          
+        )
+      ),
+      # Tabela 8
+      tabItem(
+        tabName = "tab8",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_mes", label = "Ano e Mês", 
+                          choices = unique(tb8$AAMM), 
+                          selected = tail(tb8$AAMM,1)))
+        )
+      ),
+      # Tabela 9
+      tabItem(
+        tabName = "tab9",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_mes", label = "Ano e Mês", 
+                          choices = unique(tb9$AAMM), 
+                          selected = tail(tb9$AAMM,1)))
+        )
+      ),
+      # Tabela 10
+      tabItem(
+        tabName = "tab10",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_mes", label = "Ano e Mês", 
+                          choices = unique(tb10$AAMM), 
+                          selected = tail(tb10$AAMM,1)))
+        )
+      ),
+      # Tabela 11
+      tabItem(
+        tabName = "tab11",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_mes", label = "Ano e Mês", 
+                          choices = unique(tb11$AAMM), 
+                          selected = tail(tb11$AAMM,1)))
+        )
+      ),
+      # Tabela 12
+      tabItem(
+        tabName = "tab12",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_mes", label = "Ano e Mês", 
+                          choices = unique(tb12$AAMM), 
+                          selected = tail(tb12$AAMM,1)))
+        )
+      ),
+      # Tabela 13
+      tabItem(
+        tabName = "tab13",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_mes", label = "Ano e Mês", 
+                          choices = unique(tb13$AAMM), 
+                          selected = tail(tb13$AAMM,1)))
+        )
+      ),
+      # Tabela 14
+      tabItem(
+        tabName = "tab14",
+        fluidRow(
+         
+        )
+      ),
+      # Tabela 15
+      tabItem(
+        tabName = "tab15",
+      
+        )
+      ),
+    # Tabela 16
+      tabItem(
+        tabName = "tab16",
+        fluidRow(
+         
+        )
+      ),
+    # Tabela 17
+      tabItem(
+        tabName = "tab17",
+        fluidRow(
+          
+        )
+      ),
+    # Tabela 18
+      tabItem(
+        tabName = "tab18",
+        fluidRow(
+          
+        )
+      ),
+    # Tabela 19
+      tabItem(
+        tabName = "tab19",
+        fluidRow(
+         
+        )
+      ),
+    # Tabela 20
+      tabItem(
+        tabName = "tab20",
+        fluidRow(
+         
+        )
+      ),
+    # Tabela 21
+      tabItem(
+        tabName = "tab21",
+        fluidRow(
+          
+        )
+      )
+    )
+  )
+)
+
+
+# Server ------------------------------------------------------------------------------
+
+
+server <- function(input, output) {
+  
+  # Tabela 1
+  output$tabela1 <- renderTable({
+    tb1
+  })
+  
+  output$PIA <- renderValueBox({
+    valueBox(
+      paste0(tb1$PIA[tb1$AAMM == input$select_mes]," (",  round(tb1$ind_pia[tb1$AAMM == input$select_mes],1), ")"), "População em Idade Ativa",color = "blue"
+    )
+  })
+  
+  output$PEA <- renderValueBox({
+    valueBox(
+      paste0(tb1$PEA[tb1$AAMM == input$select_mes]," (",  round(tb1$ind_pea[tb1$AAMM == input$select_mes],1), ")"), "População Economicamente Ativa",color = "blue"
+    )
+  })
+  
+  output$Ocupado <- renderValueBox({
+    valueBox(
+      paste0(tb1$Ocupado[tb1$AAMM == input$select_mes]," (",  round(tb1$ind_ocup[tb1$AAMM == input$select_mes],1), ")"), "Ocupados",color = "blue"
+    )
+  })
+  
+  output$Desempregado <- renderValueBox({
+    valueBox(
+      paste0(tb1$Desempregado[tb1$AAMM == input$select_mes]," (",  round(tb1$ind_desemp[tb1$AAMM == input$select_mes],1), ")"), "Desempregados",color = "blue"
+    )
+  })
+  
+  output$Inativo <- renderValueBox({
+    valueBox(
+      paste0(tb1$Inativo[tb1$AAMM == input$select_mes]," (",  round(tb1$ind_inat[tb1$AAMM == input$select_mes],1), ")"), "Inativos",color = "blue"
+    )
+  })
+  
+  output$Total <- renderValueBox({
+    valueBox(
+      tb1$pop_total[tb1$AAMM == input$select_mes], "População Total",color = "blue"
+    )
+  })
+  
+  output$tabela1 <- renderTable({
+    tab1
+  })
+  
+  
+  output$scatter_1 <- renderPlotly({
+    
+  })
+  
+  # Tabela 2
+  output$scatter_2 <- renderPlotly({
+    plot <- plot.scatter(df, "Petal.Width", "Sepal.Width", "Species", "Largura de Pétala", "Largura de Sépala", "Espécie")
+    ggplotly(plot)
+  })
+  # Tabela 3
+  output$scatter_3 <- renderPlotly({
+    
+  })
+  # Tabela 4
+  output$scatter_4 <- renderPlotly({
+    
+  })
+  # Tabela 5
+  output$scatter_5 <- renderPlotly({
+    
+  })
+  # Tabela 6
+  output$scatter_6 <- renderPlotly({
+    
+  })
+  # Tabela 7
+  output$scatter_7 <- renderPlotly({
+    
+  })
+  # Tabela 8
+  output$scatter_8 <- renderPlotly({
+    
+  })
+  # Tabela 9
+  output$scatter_9 <- renderPlotly({
+    
+  })
+  # Tabela 10
+  output$scatter_10 <- renderPlotly({
+    
+  })
+  # Tabela 11
+  output$scatter_11 <- renderPlotly({
+    
+  })
+  # Tabela 12
+  output$scatter_12 <- renderPlotly({
+    
+  })
+  # Tabela 13
+  output$scatter_13 <- renderPlotly({
+    
+  })
+  # Tabela 14
+  output$scatter_14 <- renderPlotly({
+    
+  })
+  # Tabela 15
+  output$scatter_15 <- renderPlotly({
+    
+  })
+  # Tabela 16
+  output$scatter_16 <- renderPlotly({
+    
+  })
+  # Tabela 17
+  output$scatter_17 <- renderPlotly({
+    
+  })
+  # Tabela 18
+  output$scatter_18 <- renderPlotly({
+    
+  })
+  # Tabela 19
+  output$scatter_19 <- renderPlotly({
+    
+  })
+  # Tabela 20
+  output$scatter_20 <- renderPlotly({
+    
+  })
+  # Tabela 21
+  output$scatter_21 <- renderPlotly({
+    tb21
+  })
+}
+
+
+shinyApp(ui = ui, server = server)
