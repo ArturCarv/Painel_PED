@@ -1,0 +1,34 @@
+##################
+### Painel PED ###
+##################
+
+# Carregando pacotes
+pacman::p_load(shiny, shinydashboard, ggplot2, plotly, lubridate)
+
+# OBS: necessário rodar o PED TAXAS E O PED RENDA
+
+# --------------------------------------------------
+
+# Criando uma variável no formato Mes-ano
+
+tabelas <- list(tb1,tb2,tb3,tb4,tb5,tb6,tb7,tb8,tb9,tb10,tb11,tb13,tb19,tb20)
+
+a = 1
+
+for (i in tabelas){
+  b <- i %>% mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4))))
+  assign(str_c("tb",a),b)
+  a = a + 1
+}
+rm(a,b)
+
+# Função para a serie histórica
+plot.serie <- function(df, var_x, var_y, lab_x, lab_y) {
+  out <- ggplot(df,aes_string(x = var_x,y = var_y)) +
+    geom_line() +
+    xlab(lab_x) + 
+    ylab(lab_y)
+  return(out)
+}
+
+shinyApp(ui = ui, server = server)
