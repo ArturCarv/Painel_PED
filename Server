@@ -1,5 +1,4 @@
 
-
 server <- function(input, output) {
   
   # Tabela 1
@@ -43,67 +42,74 @@ server <- function(input, output) {
     )
   })
   
-  output$tabela1 <- renderTable({
-    tab1
+  output$serie_temporal_tb1 <- renderPlotly({
+    plot <- plot.serie(tb1, "mes_ano", input$select_indicador_tb1,"Ano-Mês",input$select_indicador)
+    ggplotly(plot)
   })
-  
-  
-  output$scatter_1 <- renderPlotly({
-    
-  })
-  
   # Tabela 2
-  output$scatter_2 <- renderPlotly({
-    plot <- plot.scatter(df, "Petal.Width", "Sepal.Width", "Species", "Largura de Pétala", "Largura de Sépala", "Espécie")
+  output$serie_temporal_tb2 <- renderPlotly({
+    plot <- plot.serie(tb2, "mes_ano", input$select_indicador_tb2,"Ano-Mês",input$select_indicador)
     ggplotly(plot)
   })
   # Tabela 3
-  output$scatter_3 <- renderPlotly({
-    
+  output$serie_temporal_tb3 <- renderPlotly({
+    plot <- plot.serie(tb3, "mes_ano", input$select_indicador_tb3,"Ano-Mês",input$select_indicador)
+    ggplotly(plot)
   })
   # Tabela 4
-  output$scatter_4 <- renderPlotly({
-    
+  output$serie_temporal_tb4 <- renderPlotly({
+    plot <- plot.serie(tb4, "mes_ano", input$select_indicador_tb4,"Ano-Mês",input$select_indicador)
+    ggplotly(plot)
   })
   # Tabela 5
-  output$scatter_5 <- renderPlotly({
-    
+  output$serie_temporal_tb5 <- renderPlotly({
+    plot <- plot.serie(tb5, "mes_ano", input$select_indicador_tb5,"Ano-Mês",input$select_indicador)
+    ggplotly(plot)
   })
   # Tabela 6
-  output$scatter_6 <- renderPlotly({
-    
-  })
+  output$serie_temporal_tb6 <- renderPlotly({
+    plot <- plot.serie(tb6, "mes_ano", input$select_indicador_tb6,"Ano-Mês",input$select_indicador)
+    ggplotly(plot)
+  })  
   # Tabela 7
-  output$scatter_7 <- renderPlotly({
-    
+  output$serie_temporal_tb7 <- renderPlotly({
+    plot <- plot.serie(tb7, "mes_ano", input$select_indicador_tb7,"Ano-Mês",input$select_indicador)
+    ggplotly(plot)
   })
   # Tabela 8
-  output$scatter_8 <- renderPlotly({
-    
+  output$serie_temporal_tb8 <- renderPlotly({
+    plot <- plot.serie(tb8, "mes_ano", input$select_indicador_tb8,"Ano-Mês",input$select_indicador)
+    ggplotly(plot)
   })
   # Tabela 9
-  output$scatter_9 <- renderPlotly({
-    
+  output$serie_temporal_tb9 <- renderPlotly({
+    plot <- plot.serie(tb9, "mes_ano", input$select_indicador_tb9,"Ano-Mês",input$select_indicador)
+    ggplotly(plot)
   })
   # Tabela 10
-  output$scatter_10 <- renderPlotly({
-    
+  output$serie_temporal_tb10 <- renderPlotly({
+    plot <- plot.serie(tb10, "mes_ano", input$select_indicador_tb10,"Ano-Mês",input$select_indicador)
+    ggplotly(plot)
   })
   # Tabela 11
-  output$scatter_11 <- renderPlotly({
-    
+  output$serie_temporal_tb11 <- renderPlotly({
+    plot <- plot.serie(tb11, "mes_ano", input$select_indicador_tb11,"Ano-Mês",input$select_indicador)
+    ggplotly(plot)
   })
   # Tabela 12
-  output$scatter_12 <- renderPlotly({
-    
+  output$serie_temporal_tb12 <- renderPlotly({
+    plot <- plot.serie(tb12, "mes_ano", input$select_indicador_tb12,"Ano-Mês",input$select_indicador)
+    ggplotly(plot)
   })
   # Tabela 13
-  output$scatter_13 <- renderPlotly({
-    
+  output$serie_temporal_tb13 <- renderPlotly({
+    plot <- plot.serie(tb13, "mes_ano", input$select_indicador_tb13,"Ano-Mês",input$select_indicador)
+    ggplotly(plot)
   })
   # Tabela 14
-  output$scatter_14 <- renderPlotly({
-    
+  output$serie_temporal_tb14 <- renderPlotly({
+    plot <- plot.serie(tb14, "mes_ano", input$select_indicador_tb14,"Ano-Mês",input$select_indicador)
+    ggplotly(plot)
   })
   # Tabela 15
   output$scatter_15 <- renderPlotly({
@@ -134,4 +140,3 @@ server <- function(input, output) {
     tb21
   })
 }
-
