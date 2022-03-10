@@ -3,24 +3,15 @@
 ##################
 
 # Carregando pacotes
-pacman::p_load(shiny, shinydashboard, ggplot2, plotly, lubridate)
-
-# OBS: necessário rodar o PED TAXAS E O PED RENDA
+pacman::p_load(shiny, shinydashboard, tidyverse, plotly, lubridate, haven, survey, srvyr, zoo, devtools)
 
 # --------------------------------------------------
 
-# Criando uma variável no formato Mes-ano
+# Lista dos nomes das tabelas
+nomes_tabelas <- list(paste0(rep("Tabela ",21),1:21))
 
+# Lista das tabelas
 tabelas <- list(tb1,tb2,tb3,tb4,tb5,tb6,tb7,tb8,tb9,tb10,tb11,tb13,tb19,tb20)
-
-a = 1
-
-for (i in tabelas){
-  b <- i %>% mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4))))
-  assign(str_c("tb",a),b)
-  a = a + 1
-}
-rm(a,b)
 
 # Função para a serie histórica
 plot.serie <- function(df, var_x, var_y, lab_x, lab_y) {
@@ -31,4 +22,53 @@ plot.serie <- function(df, var_x, var_y, lab_x, lab_y) {
   return(out)
 }
 
-shinyApp(ui = ui, server = server)
+# Meses
+
+meses <- as.character(c(202101:202112,202201:as.numeric(paste0(str_sub(today(),1,4),str_sub(today(),6,7)))))
+
+# Variáveis das tabelas
+
+n_tb1  <- c("PIA","ind_pia","PEA","ind_pea","Ocupado","ind_ocup","Desempregado",
+            "ind_desemp","Inativo","ind_inat","tx.partic","tx.desemp","pop_total") 
+n_tb2  <- c("total","tx.desemp","Desemp_Aberto","tx.desemp.aberto","Desemp_Oculto","tx.desemp.oculto",
+            "Desemp_Oculto_Precario","tx.desemp.oculto.precario","Desemp_Oculto_Desalento","tx.desemp.oculto.desalento")
+n_tb3  <- c("Total","Grupo_1","Grupo_2","Grupo_3","Grupo_4")
+n_tb4  <- c("Total","Homens","Mulheres","fxetaria_14a15anos","fxetaria_16a24anos","fxetaria_25a39anos",
+            "fxetaria_40a49anos","fxetaria_50a59anos","fxetaria_60anosemais","chefe","demais_membros",
+            "negro","nao_negro","trab_anterior_sim","trab_anterior_nao")
+n_tb5  <- c("Total","Homens","Mulheres","fxetaria_14a15anos","fxetaria_16a24anos","fxetaria_25a39anos",
+            "fxetaria_40a49anos","fxetaria_50a59anos","fxetaria_60anosemais","chefe","demais_membros",
+            "negro","nao_negro")
+n_tb6  <- c("perc_Total", "perc_Homens", "perc_Mulheres", "perc_fxetaria_14a15anos",  "perc_fxetaria_16a24anos", 
+            "perc_fxetaria_25a39anos", "perc_fxetaria_40a49anos",  
+            "perc_fxetaria_50a59anos",  "perc_fxetaria_60anosemais", "perc_chefe", "perc_demais_membros", "perc_negro")
+n_tb7  <- c("perc_Total", "perc_Homens", "perc_Mulheres", "perc_fxetaria_14a15anos",  "perc_fxetaria_16a24anos", 
+            "perc_fxetaria_25a39anos", "perc_fxetaria_40a49anos",  
+            "perc_fxetaria_50a59anos",  "perc_fxetaria_60anosemais", "perc_chefe", "perc_demais_membros", 
+            "perc_negro","perc_trab_anterior_sim","perc_trab_anterior_nao")
+n_tb8  <- c("total", "ind_total", "industria","ind_indtrans",  "construcao", "ind_constr", "comercio",                 
+            "ind_comerc", "servico", "ind_servicos", "admpub_defesa_segursocial","X.NA.", "ind_admpub")
+n_tb9  <- c("perc_total", "perc_indtrans", "perc_constr", "perc_comerc", "perc_servicos", "perc_admpub")
+n_tb10 <- c("ind_total", "ind_indtrans", "ind_constr", "ind_comerc", "ind_servicos", "ind_transporte_armaz_cor", 
+            "ind_inform_comunicacao","ind_ativ_adm_serv_comp","ind_adm_publica_defesa", "ind_admpub", "ind_educacao",
+            "ind_saude", "ind_alojam_alimentacao", "ind_serv_domestico")
+n_tb11 <- c("ocupado","ind_ocup","assalariado","ind_assal_tot","setor_privado","ind_assal_priv","ass_priv_c_cart",
+            "ind_assal_priv_c_cart", "ass_priv_s_cart","ind_assal_priv_s_cart","ass_pub", "ind_assal_publ", "autonomo",
+            "ind_autonomos","empreg_domestico","ind_emp_dom")
+n_tb12 <- c("perc_ocupado","perc_assalariado","perc_setor_privado","perc_ass_priv_c_cart",
+            "perc_ass_priv_s_cart","perc_ass_pub","perc_autonomo","perc_empreg_domestico")
+n_tb13 <- c("perc_total","perc_hom","perc_mul","perc_fxetaria_14a15anos","perc_fxetaria_16a24anos","perc_fxetaria_25a39anos",
+            "perc_fxetaria_40a49anos","perc_fxetaria_50a59anos","perc_fxetaria_60anosemais","perc_chefe","perc_demais_membros",      
+            "perc_negro","perc_nao_negro","perc_sim","perc_nao")
+n_tb14 <- c("perc_total","perc_ate6meses","perc_maisde6mesesa1ano", "perc_maisde1a2anos",    
+            "perc_maisde2a3anos","perc_maisde3a5anos","perc_maisde5anos")
+
+
+
+
+n_tb19 <- c("perc_total","perc_hom","perc_mul","perc_fxetaria_14a15anos","perc_fxetaria_16a24anos","perc_fxetaria_25a39anos",
+            "perc_fxetaria_40a49anos","perc_fxetaria_50a59anos","perc_fxetaria_60anosemais","perc_chefe","perc_demais_membros",      
+            "perc_negro","perc_nao_negro","perc_sim","perc_nao")
+n_tb20 <- c("perc_total","perc_ate6meses","perc_maisde6mesesa1ano",
+            "perc_maisde1a2anos","perc_maisde2a3anos","perc_maisde3a5anos","perc_maisde5anos")
+n_tb21 <- c("perc_total","perc_aposent","perc_estud","perc_dedi_afazerdomest","perc_lic_saude","perc_outros")
