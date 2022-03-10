@@ -1,3 +1,4 @@
+
 ui <- dashboardPage(
   
   # Título
@@ -6,6 +7,9 @@ ui <- dashboardPage(
   # Menu
   dashboardSidebar(
     sidebarMenu(
+      selectInput(inputId = "select_mes", label = "Ano e Mês", 
+                           choices = meses[1:(length(meses)-1)], 
+                           selected = meses[length(meses)-1]),
       menuItem("Tabela 1", tabName = "tab1", icon = icon("table")),
       menuItem("Tabela 2", tabName = "tab2", icon = icon("table")),
       menuItem("Tabela 3", tabName = "tab3", icon = icon("table")),
@@ -28,8 +32,7 @@ ui <- dashboardPage(
       menuItem("Tabela 20", tabName = "tab20", icon = icon("table")),
       menuItem("Tabela 21", tabName = "tab21", icon = icon("table"))
       )
-    
-  ),
+    ),
   
   # Tabela 1
   dashboardBody(
@@ -37,22 +40,23 @@ ui <- dashboardPage(
       tabItem(tabName = "tab1",
               fluidRow(
                 box(width = 2,
-                    selectInput(inputId = "select_mes", label = "Ano e Mês", 
-                                choices = unique(tb1$AAMM), 
-                                selected = tail(tb1$AAMM,1))),
-                box(width = 2,
-                  selectInput(inputId = "select_indicador_tb1", label = "Indicador", 
-                              choices = names(tb1[2:(ncol(tb1)-1)]), 
-                              selected = names(tb1[2]))),
+                    selectInput(inputId = "select_indicador_tb1", label = "Indicador", 
+                                choices = n_tb1, 
+                                selected = n_tb1)),
                 valueBoxOutput(width = 2, outputId = "PIA"),
+                valueBoxOutput(width = 2, outputId = "Ind_PIA"),
                 valueBoxOutput(width = 2, outputId = "PEA"),
+                valueBoxOutput(width = 2, outputId = "Ind_PEA"),
                 valueBoxOutput(width = 2, outputId = "Ocupado"),
+                valueBoxOutput(width = 2, outputId = "Ind_Ocupado"),
                 valueBoxOutput(width = 2, outputId = "Desempregado"),
+                valueBoxOutput(width = 2, outputId = "Ind_Desempregado"),
                 valueBoxOutput(width = 2, outputId = "Inativo"),
+                valueBoxOutput(width = 2, outputId = "Ind_Inativo"),
                 valueBoxOutput(width = 2, outputId = "Total")
               ),
               fluidRow(
-                  plotlyOutput(outputId = "serie_temporal_tb1")
+                column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb1"))
               )
       ),
       # Tabela 2
@@ -60,16 +64,23 @@ ui <- dashboardPage(
         tabName = "tab2",
         fluidRow(
           box(width = 2,
-              selectInput(inputId = "select_mes", label = "Ano e Mês", 
-                          choices = unique(tb2$AAMM), 
-                          selected = tail(tb2$AAMM,1))),
-          box(width = 2,
               selectInput(inputId = "select_indicador_tb2", label = "Indicador", 
-                          choices = names(tb2[2:(ncol(tb2)-1)]), 
-                          selected = names(tb2[2])))
+                          choices = n_tb2, 
+                          selected = n_tb2[1])),
+          
+          valueBoxOutput(width = 2, outputId = "Desemp_Total"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp"),
+          valueBoxOutput(width = 2, outputId = "Desemp_Aberto"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_Aberto"),
+          valueBoxOutput(width = 2, outputId = "Desemp_Oculto"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_Oculto"),
+          valueBoxOutput(width = 2, outputId = "Desemp_Oculto_Precario"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_Oculto_Precario"),
+          valueBoxOutput(width = 2, outputId = "Desemp_Oculto_Desalento"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_Oculto_Desalento")
         ),
         fluidRow(
-          plotlyOutput(outputId = "serie_temporal_tb2")
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb2"))
         )
       ),
       # Tabela 3
@@ -77,16 +88,18 @@ ui <- dashboardPage(
         tabName = "tab3",
         fluidRow(
           box(width = 2,
-              selectInput(inputId = "select_mes", label = "Ano e Mês", 
-                          choices = unique(tb3$AAMM), 
-                          selected = tail(tb3$AAMM,1))),
-          box(width = 2,
               selectInput(inputId = "select_indicador_tb3", label = "Indicador", 
-                          choices = names(tb3[2:(ncol(tb3)-1)]), 
-                          selected = names(tb3[2])))
+                          choices = n_tb3, 
+                          selected = n_tb3[1])),
+          
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_Total"),
+          valueBoxOutput(width = 2, outputId = "Grupo_1"),
+          valueBoxOutput(width = 2, outputId = "Grupo_2"),
+          valueBoxOutput(width = 2, outputId = "Grupo_3"),
+          valueBoxOutput(width = 2, outputId = "Grupo_4")
         ),
         fluidRow(
-          plotlyOutput(outputId = "serie_temporal_tb3")
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb3"))
         )
       ),
       # Tabela 4
@@ -94,16 +107,27 @@ ui <- dashboardPage(
         tabName = "tab4",
         fluidRow(
           box(width = 2,
-              selectInput(inputId = "select_mes", label = "Ano e Mês", 
-                          choices = unique(tb4$AAMM), 
-                          selected = tail(tb4$AAMM,1))),
-          box(width = 2,
               selectInput(inputId = "select_indicador_tb4", label = "Indicador", 
-                          choices = names(tb4[2:(ncol(tb4)-1)]), 
-                          selected = names(tb4[2])))
+                          choices = n_tb4, 
+                          selected = n_tb4[1])),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_Total_2"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_Homens"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_Mulheres"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_14_e_15"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_16_a_24"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_25_a_39"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_40_a_49"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_50_a_59"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_60"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_Chefe"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_Demais_membros"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_Negros"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_Nao_Negros"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_Trab_Anteriro_Sim"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_Trab_Anteriro_Nao")
         ),
         fluidRow(
-          plotlyOutput(outputId = "serie_temporal_tb4")
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb4"))
         )
       ),
       # Tabela 5
@@ -111,16 +135,25 @@ ui <- dashboardPage(
         tabName = "tab5",
         fluidRow(
           box(width = 2,
-              selectInput(inputId = "select_mes", label = "Ano e Mês", 
-                          choices = unique(tb5$AAMM), 
-                          selected = tail(tb5$AAMM,1))),
-          box(width = 2,
               selectInput(inputId = "select_indicador_tb5", label = "Indicador", 
-                          choices = names(tb5[2:(ncol(tb5)-1)]), 
-                          selected = names(tb5[2])))
+                          choices = n_tb5, 
+                          selected = n_tb5[1])),
+          valueBoxOutput(width = 2, outputId = "Tx_Particip_Total"),
+          valueBoxOutput(width = 2, outputId = "Tx_Particip_Homens"),
+          valueBoxOutput(width = 2, outputId = "Tx_Particip_Mulheres"),
+          valueBoxOutput(width = 2, outputId = "Tx_Particip_14_e_15"),
+          valueBoxOutput(width = 2, outputId = "Tx_Particip_16_a_24"),
+          valueBoxOutput(width = 2, outputId = "Tx_Particip_25_a_39"),
+          valueBoxOutput(width = 2, outputId = "Tx_Particip_40_a_49"),
+          valueBoxOutput(width = 2, outputId = "Tx_Particip_50_a_59"),
+          valueBoxOutput(width = 2, outputId = "Tx_Particip_60"),
+          valueBoxOutput(width = 2, outputId = "Tx_Particip_Chefe"),
+          valueBoxOutput(width = 2, outputId = "Tx_Particip_Demais_membros"),
+          valueBoxOutput(width = 2, outputId = "Tx_Particip_Negros"),
+          valueBoxOutput(width = 2, outputId = "Tx_Particip_Nao_Negros")
         ),
         fluidRow(
-          plotlyOutput(outputId = "serie_temporal_tb5")
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb5"))
           
         )
       ),
@@ -129,16 +162,27 @@ ui <- dashboardPage(
         tabName = "tab6",
         fluidRow(
           box(width = 2,
-              selectInput(inputId = "select_mes", label = "Ano e Mês", 
-                          choices = unique(tb6$AAMM), 
-                          selected = tail(tb6$AAMM,1))),
-          box(width = 2,
               selectInput(inputId = "select_indicador_tb6", label = "Indicador", 
-                          choices = names(tb6[2:(ncol(tb6)-1)]), 
-                          selected = names(tb6[2])))
+                          choices = n_tb6, 
+                          selected = n_tb6[1])),
+          valueBoxOutput(width = 2, outputId = "Dist_Desemp_Total"),
+          valueBoxOutput(width = 2, outputId = "Dist_Desemp_Homens"),
+          valueBoxOutput(width = 2, outputId = "Dist_Desemp_Mulheres"),
+          valueBoxOutput(width = 2, outputId = "Dist_Desemp_14_e_15"),
+          valueBoxOutput(width = 2, outputId = "Dist_Desemp_16_a_24"),
+          valueBoxOutput(width = 2, outputId = "Dist_Desemp_25_a_39"),
+          valueBoxOutput(width = 2, outputId = "Dist_Desemp_40_a_49"),
+          valueBoxOutput(width = 2, outputId = "Dist_Desemp_50_a_59"),
+          valueBoxOutput(width = 2, outputId = "Dist_Desemp_60"),
+          valueBoxOutput(width = 2, outputId = "Dist_Desemp_Chefe"),
+          valueBoxOutput(width = 2, outputId = "Dist_Desemp_Demais_membros"),
+          valueBoxOutput(width = 2, outputId = "Dist_Desemp_Negros"),
+          valueBoxOutput(width = 2, outputId = "Dist_Desemp_Nao_Negros"),
+          valueBoxOutput(width = 2, outputId = "Dist_Desemp_Trab_Anteriro_Sim"),
+          valueBoxOutput(width = 2, outputId = "Dist_Desemp_Trab_Anteriro_Nao")
         ),
         fluidRow(
-          plotlyOutput(outputId = "serie_temporal_tb6")
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb6"))
         )
       ),
       # Tabela 7
@@ -146,17 +190,27 @@ ui <- dashboardPage(
         tabName = "tab7",
         fluidRow(
           box(width = 2,
-              selectInput(inputId = "select_mes", label = "Ano e Mês", 
-                          choices = unique(tb7$AAMM), 
-                          selected = tail(tb7$AAMM,1))),
-          box(width = 2,
               selectInput(inputId = "select_indicador_tb7", label = "Indicador", 
-                          choices = names(tb7[2:(ncol(tb7)-1)]), 
-                          selected = names(tb7[2])))
+                          choices = n_tb7, 
+                          selected = n_tb7[1])),
+          valueBoxOutput(width = 2, outputId = "Dist_PEA_Total"),
+          valueBoxOutput(width = 2, outputId = "Dist_PEA_Homens"),
+          valueBoxOutput(width = 2, outputId = "Dist_PEA_Mulheres"),
+          valueBoxOutput(width = 2, outputId = "Dist_PEA_14_e_15"),
+          valueBoxOutput(width = 2, outputId = "Dist_PEA_16_a_24"),
+          valueBoxOutput(width = 2, outputId = "Dist_PEA_25_a_39"),
+          valueBoxOutput(width = 2, outputId = "Dist_PEA_40_a_49"),
+          valueBoxOutput(width = 2, outputId = "Dist_PEA_50_a_59"),
+          valueBoxOutput(width = 2, outputId = "Dist_PEA_60"),
+          valueBoxOutput(width = 2, outputId = "Dist_PEA_Chefe"),
+          valueBoxOutput(width = 2, outputId = "Dist_PEA_Demais_membros"),
+          valueBoxOutput(width = 2, outputId = "Dist_PEA_Negros"),
+          valueBoxOutput(width = 2, outputId = "Dist_PEA_Nao_Negros"),
+          valueBoxOutput(width = 2, outputId = "Dist_PEA_Trab_Anteriro_Sim"),
+          valueBoxOutput(width = 2, outputId = "Dist_PEA_Trab_Anteriro_Nao")
         ),
         fluidRow(
-          plotlyOutput(outputId = "serie_temporal_tb7")
-          
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb7"))
         )
       ),
       # Tabela 8
@@ -164,16 +218,24 @@ ui <- dashboardPage(
         tabName = "tab8",
         fluidRow(
           box(width = 2,
-              selectInput(inputId = "select_mes", label = "Ano e Mês", 
-                          choices = unique(tb8$AAMM), 
-                          selected = tail(tb8$AAMM,1))),
-          box(width = 2,
               selectInput(inputId = "select_indicador_tb8", label = "Indicador", 
-                          choices = names(tb8[2:(ncol(tb8)-1)]), 
-                          selected = names(tb8[2])))
-        ),
+                          choices = n_tb8, 
+                          selected = n_tb8[1])),
+        valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Total"),
+        valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Total"),
+        valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Industria"),
+        valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Industria"),
+        valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Construcao"),
+        valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Construcao"),
+        valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Comercio"),
+        valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Comercio"),
+        valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Servico"),
+        valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Servico"),
+        valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_admpub"),
+        valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_admpub")
+      ),
         fluidRow(
-          plotlyOutput(outputId = "serie_temporal_tb8")
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb8"))
         )
       ),
       # Tabela 9
@@ -181,16 +243,18 @@ ui <- dashboardPage(
         tabName = "tab9",
         fluidRow(
           box(width = 2,
-              selectInput(inputId = "select_mes", label = "Ano e Mês", 
-                          choices = unique(tb9$AAMM), 
-                          selected = tail(tb9$AAMM,1))),
-          box(width = 2,
               selectInput(inputId = "select_indicador_tb9", label = "Indicador", 
-                          choices = names(tb9[2:(ncol(tb9)-1)]), 
-                          selected = names(tb9[2])))
-        ),
+                          choices = n_tb9, 
+                          selected = n_tb9[1])),
+        valueBoxOutput(width = 2, outputId = "Dist_Ocup_Total"),
+        valueBoxOutput(width = 2, outputId = "Dist_Ocup_Industria"),
+        valueBoxOutput(width = 2, outputId = "Dist_Ocup_Construcao"),
+        valueBoxOutput(width = 2, outputId = "Dist_Ocup_Comercio"),
+        valueBoxOutput(width = 2, outputId = "Dist_Ocup_Servico"),
+        valueBoxOutput(width = 2, outputId = "Dist_Ocup_admpub")
+      ),
         fluidRow(
-          plotlyOutput(outputId = "serie_temporal_tb9")
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb9"))
         )
       ),
       # Tabela 10
@@ -198,16 +262,25 @@ ui <- dashboardPage(
         tabName = "tab10",
         fluidRow(
           box(width = 2,
-              selectInput(inputId = "select_mes", label = "Ano e Mês", 
-                          choices = unique(tb10$AAMM), 
-                          selected = tail(tb10$AAMM,1))),
-          box(width = 2,
               selectInput(inputId = "select_indicador_tb10", label = "Indicador", 
-                          choices = names(tb10[2:(ncol(tb10)-1)]), 
-                          selected = names(tb10[2])))
+                          choices = n_tb10, 
+                          selected = n_tb10[1])),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Total_2"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Industria_2"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Construcao_2"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Servico_2"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Transporte"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Informacao"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Atividades"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Adm_Publica_T"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Adm_Publica"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Servico_Educacao"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Saude"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Alojamento"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Domestico")
         ),
         fluidRow(
-          plotlyOutput(outputId = "serie_temporal_tb10")
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb10"))
         )
       ),
       # Tabela 11
@@ -215,16 +288,28 @@ ui <- dashboardPage(
         tabName = "tab11",
         fluidRow(
           box(width = 2,
-              selectInput(inputId = "select_mes", label = "Ano e Mês", 
-                          choices = unique(tb11$AAMM), 
-                          selected = tail(tb11$AAMM,1))),
-          box(width = 2,
               selectInput(inputId = "select_indicador_tb11", label = "Indicador", 
-                          choices = names(tb11[2:(ncol(tb11)-1)]), 
-                          selected = names(tb11[2])))
-        ),
+                          choices = n_tb11, 
+                          selected = n_tb11[1])),
+          valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Total_2"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Total_3"),
+          valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Assalariados_Total"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Assalariados_Total"),
+          valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Ass_Setor_Privado"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Ass_Setor_Privado"),
+          valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Ass_Privado_C_Carteira"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Ass_Privado_C_Carteira"),
+          valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Ass_Privado_S_Carteira"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Ass_Privado_S_Carteira"),
+          valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Ass_Publico"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Ass_Publico"),
+          valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Autonomo"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Autonomo"),
+          valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Empregado_Domestico"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Empregado_Domestico")
+      ),
         fluidRow(
-          plotlyOutput(outputId = "serie_temporal_tb11")
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb11"))
         )
       ),
       # Tabela 12
@@ -232,16 +317,20 @@ ui <- dashboardPage(
         tabName = "tab12",
         fluidRow(
           box(width = 2,
-              selectInput(inputId = "select_mes", label = "Ano e Mês", 
-                          choices = unique(tb12$AAMM), 
-                          selected = tail(tb12$AAMM,1))),
-          box(width = 2,
               selectInput(inputId = "select_indicador_tb12", label = "Indicador", 
-                          choices = names(tb12[2:(ncol(tb12)-1)]), 
-                          selected = names(tb12[2])))
+                          choices = n_tb12, 
+                          selected = n_tb12[1])),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Total_2"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Assalariados_Total"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Ass_Setor_Privado"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Ass_Privado_C_Carteira"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Ass_Privado_S_Carteira"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Ass_Publico"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Autonomo"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Empregado_Domestico")
         ),
         fluidRow(
-          plotlyOutput(outputId = "serie_temporal_tb12")
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb12"))
         )
       ),
       # Tabela 13
@@ -249,82 +338,135 @@ ui <- dashboardPage(
         tabName = "tab13",
         fluidRow(
           box(width = 2,
-              selectInput(inputId = "select_mes", label = "Ano e Mês", 
-                          choices = unique(tb13$AAMM), 
-                          selected = tail(tb13$AAMM,1))),
-          box(width = 2,
               selectInput(inputId = "select_indicador_tb13", label = "Indicador", 
-                          choices = names(tb13[2:(ncol(tb13)-1)]), 
-                          selected = names(tb13[2])))
+                          choices = n_tb13, 
+                          selected = n_tb13[1])),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Total_3"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Homens"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Mulheres"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_14_e_15"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_16_a_24"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_25_a_39"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_40_a_49"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_50_a_59"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_60"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Chefe"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Demais_membros"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Negros"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Nao_Negros"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Trab_Anteriro_Sim"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Trab_Anteriro_Nao")
         ),
         fluidRow(
-          plotlyOutput(outputId = "serie_temporal_tb13")
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb13"))
         )
       ),
       # Tabela 14
       tabItem(
-        tabName = "tab13",
+        tabName = "tab14",
         fluidRow(
-          box(width = 2,
-              selectInput(inputId = "select_mes", label = "Ano e Mês", 
-                          choices = unique(tb13$AAMM), 
-                          selected = tail(tb13$AAMM,1))),
           box(width = 2,
               selectInput(inputId = "select_indicador_tb14", label = "Indicador", 
-                          choices = names(tb14[2:(ncol(tb14)-1)]), 
-                          selected = names(tb14[2])))
+                          choices = n_tb14, 
+                          selected = n_tb14[1]))
         ),
         fluidRow(
-          plotlyOutput(outputId = "serie_temporal_tb14")
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb14"))
         )
       ),
       # Tabela 15
       tabItem(
         tabName = "tab15",
         fluidRow(
-         
+          
         )
       ),
-    # Tabela 16
+      # Tabela 16
       tabItem(
         tabName = "tab16",
         fluidRow(
-         
+          
         )
       ),
-    # Tabela 17
+      # Tabela 17
       tabItem(
         tabName = "tab17",
         fluidRow(
           
         )
       ),
-    # Tabela 18
+      # Tabela 18
       tabItem(
         tabName = "tab18",
         fluidRow(
           
         )
       ),
-    # Tabela 19
+      # Tabela 19
       tabItem(
         tabName = "tab19",
         fluidRow(
-         
+          box(width = 2,
+              selectInput(inputId = "select_indicador_tb19", label = "Indicador", 
+                          choices = n_tb19, 
+                          selected = n_tb19[1])),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Total"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Homens"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Mulheres"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_14_e_15"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_16_a_24"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_25_a_39"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_40_a_49"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_50_a_59"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_60"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Chefe"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Demais_membros"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Negros"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Nao_Negros"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Trab_Anteriro_Sim"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Trab_Anteriro_Nao")
+        ),
+        fluidRow(
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb19"))
         )
       ),
-    # Tabela 20
+      # Tabela 20
       tabItem(
         tabName = "tab20",
         fluidRow(
-         
+          box(width = 2,
+              selectInput(inputId = "select_indicador_tb20", label = "Indicador", 
+                          choices = n_tb20, 
+                          selected = n_tb20[1])),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Total_2"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_6meses"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_6a12meses"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_1a2anos"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_2a3anos"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_3a5anos"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_5anos")
+        ),
+        fluidRow(
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb20"))
         )
       ),
-    # Tabela 21
+      # Tabela 21
       tabItem(
         tabName = "tab21",
         fluidRow(
-          
+          box(width = 2,
+              selectInput(inputId = "select_indicador_tb21", label = "Indicador", 
+                          choices = n_tb21, 
+                          selected = n_tb21[1])),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Total_3"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Aposentado"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Estudante"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Domestico"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Licenciado"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Outros")
+        ),
+        fluidRow(
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb21"))
         )
       )
     )
