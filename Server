@@ -1,7 +1,7 @@
 server <- function(input, output){
   
   
-sample.ped <- reactive({  
+  sample.ped <- reactive({  
     mes <- input$select_mes
     
     if(202101 <= input$select_mes & input$select_mes <= 202112){
@@ -10,7 +10,7 @@ sample.ped <- reactive({
     }else{
       arq1 <- read_sav(paste0("W:/PED/PED 2021/Processamento/202112/PED-DF 2021.SAV")) %>% rename(SIT=sit, FATOR=fator2, AAMM=ANO_MES) %>% data.frame()
       arq2 <- read_sav(paste0("W:/PED/PED 2022/PROCESSAMENTO/",input$select_mes,"/PED-DF 2022.SAV")) %>% rename(SIT=sit, FATOR=fator2, AAMM=ANO_MES) %>% data.frame()    
-      }
+    }
     
     common_cols <- intersect(colnames(arq1), colnames(arq2))
     
@@ -218,2029 +218,2030 @@ sample.ped <- reactive({
     srvyr::as_survey(sample.pedg)
   })
   
-
-
-##################
-###### TABELA 1
-
-
-#### Estimativas da Populacao em Idade Ativa de 14 Anos e Mais e Taxas de Participacao e de Desemprego Total
-
-tb1p1 <- reactive({
-  sample.ped() %>%
-    srvyr::filter(C050>=14) %>%
-    srvyr::filter(!(SIT %in% c(0,10))) %>%
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%
-    srvyr::group_by(AAMM,sit) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=F),
-                   .fill="PIA") %>% 
-    select(-n_se) %>% 
-    dplyr::ungroup() %>%
-    dplyr::group_by(sit) %>%
-    dplyr::mutate(media_tb1 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="PIA")) %>%
-    dplyr::ungroup() %>%
-    
-    select(-c(n)) %>% 
-    tidyr::spread(sit, media_tb1) %>% 
-    dplyr::mutate(
-      PEA = Desempregado+Ocupado,
-      tx.desemp = round(Desempregado/PEA*100,1),
-      tx.partic = round(PEA/PIA*100,1)) %>% 
-    filter(!(is.na(PIA))) %>% 
-    data.frame()})
-
-
-## Fazer a media movel com 3 periodos para populacao total
-tb1p2 <- reactive({
-  sample.ped() %>%
-    srvyr::mutate(count=1,
-                  AAMM=as.character(AAMM)) %>%
-    srvyr::group_by(AAMM) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=F)) %>% 
-    select(-n_se) %>% 
-    dplyr::mutate(
-      pop_total = round(rollmean(x = n, 3, align = "right", fill = NA)/1000)) %>% 
-    select(AAMM,pop_total) %>% 
-    data.frame()})
-
-
-
-### Tab1 final
-
-tb1 <- reactive({ tb1p1() %>% 
-    dplyr::mutate(
-      PIA=round(PIA),
-      PEA=round(PEA),
-      Ocupado=round(Ocupado),
-      Desempregado=round(Desempregado),
-      Inativo=round(Inativo),
-      ind_pia = 100*(PIA/2121),
-      ind_pea = 100*(PEA/1421),
-      ind_ocup = 100*(Ocupado/1253),
-      ind_desemp = 100*(round(Desempregado)/168),
-      ind_inat = 100*(Inativo/700)) %>% 
-    left_join(tb1p2(), by=c("AAMM")) %>% 
-    select(AAMM, PIA, ind_pia, PEA, ind_pea, Ocupado, ind_ocup, Desempregado, ind_desemp, Inativo, ind_inat, tx.partic, tx.desemp, pop_total) %>% 
-    mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-    data.frame()
-})
-
-
-
-######################################################################################
-
-
-
-##################
-###### TABELA 2
-
-
-#### Estimativas da Populacao Desempregada e Taxas de Desemprego, por Tipo
-
-tb2p1 <- reactive({
-  sample.ped() %>%
-    srvyr::filter(C050>=14) %>%
-    srvyr::filter(!(SIT %in% c(0,4,5,6,10))) %>%
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%
-    srvyr::group_by(AAMM,sit2) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=F, vartype="ci"),
-                   .fill="total"
-    ) %>% 
-    dplyr::ungroup() %>%
-    dplyr::group_by(sit2) %>%
-    dplyr::mutate(
-      media_tb2 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="total")) %>% 
-    dplyr::ungroup() %>%
-    
-    select(-c(n, n_low, n_upp)) %>% 
-    tidyr::spread(sit2, media_tb2) %>% 
-    data.frame()})
-
-
-##
-tb2p2 <- reactive({
-  sample.ped() %>%
-    srvyr::filter(C050>=14) %>%
-    srvyr::filter(!(SIT %in% c(0,2,4,5,6,10))) %>%
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%
-    srvyr::group_by(AAMM,sit3) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=F, vartype="ci"),
-                   .fill="Desemp_Oculto"
-    ) %>% 
-    dplyr::ungroup() %>%
-    dplyr::group_by(sit3) %>%
-    dplyr::mutate(
-      media_tb2 =rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="Desemp_Oculto")) %>% 
-    dplyr::ungroup() %>%
-    
-    select(-c(n, n_low, n_upp)) %>% 
-    tidyr::spread(sit3, media_tb2) %>% 
-    data.frame()})
-
-
-
-### Tab2 final
-tb2 <- reactive({ tb2p1() %>%
-    full_join(tb2p2()) %>%
-    filter(!(is.na(total))) %>%
-    left_join(tb1p1(), by=c("AAMM")) %>%
-    dplyr::mutate(
-      tx.desemp=round(tx.desemp,1),
-      tx.desemp.aberto=round(Desemp_Aberto/PEA*100,1),
-      tx.desemp.oculto=round(Desemp_Oculto/PEA*100,1),
-      tx.desemp.oculto.precario=round(Desemp_Oculto_Precario/PEA*100,1),
-      tx.desemp.oculto.desalento=round(Desemp_Oculto_Desalento/PEA*100,1),
-      total = round(total),
-      Desemp_Aberto = round(Desemp_Aberto),
-      Desemp_Oculto = round(Desemp_Oculto),
-      Desemp_Oculto_Precario = round(Desemp_Oculto_Precario),
-      Desemp_Oculto_Desalento = round(Desemp_Oculto_Desalento)
-    ) %>% 
-    select(AAMM, total, tx.desemp,  Desemp_Aberto, tx.desemp.aberto,  Desemp_Oculto, tx.desemp.oculto, Desemp_Oculto_Precario, tx.desemp.oculto.precario, Desemp_Oculto_Desalento, tx.desemp.oculto.desalento) %>% 
-    mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-    data.frame()
-})
-
-
-
-######################################################################################
-
-
-
-##################
-###### TABELA 3
-
-
-#### Taxa de Desemprego Total, por Grupos de Regi?es Administrativas
-
-tb3p1 <- reactive({
-  sample.ped() %>%
-    srvyr::filter(C050>=14) %>%
-    srvyr::filter(!(SIT %in% c(0,10))) %>%
-    
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%
-    srvyr::group_by(AAMM,sit,grupo) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=F),
-                   .fill="PIA"
-    ) %>% 
-    select(-n_se) %>% 
-    dplyr::ungroup() %>%
-    dplyr::group_by(sit, grupo) %>%
-    dplyr::mutate(
-      media_tb3 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="PIA")) %>%
-    filter(grupo!="PIA") %>% 
-    data.frame()})
-
-
-
-## Fazer taxa de desemprego total
-tb3p2 <- reactive({
-  tb3p1() %>% 
-    select(-c(n)) %>%   
-    dplyr::group_by(AAMM, sit) %>%
-    dplyr::summarise(media_tb3=sum(media_tb3,na.rm=T)) %>% 
-    tidyr::spread(sit, media_tb3) %>% 
-    dplyr::mutate(
-      PEA = Desempregado+Ocupado,
-      tx.desemp = round(Desempregado/PEA*100,1)) %>% 
-    select(AAMM, tx.desemp) %>% 
-    rename(Total=tx.desemp) %>% 
-    data.frame()})
-
-
-
-### Tab3 final
-tb3 <- reactive({ 
-  tb3p1() %>% 
-    select(-c(n)) %>% 
-    tidyr::spread(sit, media_tb3) %>% 
-    dplyr::mutate(
-      PEA = Desempregado+Ocupado,
-      tx.desemp = round(Desempregado/PEA*100,1)) %>% 
-    select(AAMM, grupo, tx.desemp) %>% 
-    
-    tidyr::spread(grupo, tx.desemp) %>% 
-    
-    left_join(tb3p2(), by=c("AAMM")) %>% 
-    
-    select(AAMM, Total, Grupo_1, Grupo_2, Grupo_3, Grupo_4) %>% 
-    filter(!(is.na(Total))) %>% 
-    mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-    data.frame()
-})
-
-
-
-######################################################################################
-
-
-
-##################
-###### TABELA 4
-
-
-#### Taxas de Desemprego, por Atributos Pessoais e Trabalho Anterior
-
-### Sexo
-tb4g1 <- reactive({ 
-  sample.ped() %>%
-    srvyr::filter(C050>=14) %>%
-    srvyr::filter(!(SIT %in% c(0,10))) %>%
-    
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%  
-    
-    srvyr::group_by(AAMM,sit,sexo) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=F),
-                   .fill="PIA"
-    ) %>% 
-    select(-n_se) %>% 
-    dplyr::ungroup() %>%
-    data.frame()})
-
-
-tb4p1 <- reactive({ tb4g1() %>%   
-    dplyr::group_by(sit, sexo) %>%
-    dplyr::mutate(
-      media_tb4 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>%
-    filter(!(AAMM=="PIA")) %>%
-    filter(sexo!="PIA") %>%
-    data.frame()
-})
-
-
-##
-tb4f1 <- reactive({ tb4p1() %>%
-    select(-c(n)) %>%
-    tidyr::spread(sit, media_tb4) %>%
-    dplyr::mutate(
-      PEA = Desempregado+Ocupado,
-      tx.desemp = round(Desempregado/PEA*100,1)) %>%
-    select(AAMM,sexo,tx.desemp) %>%
-    tidyr::spread(sexo,tx.desemp) %>%
-    data.frame()
-})
-
-
-### Raca/cor
-tb4g2 <- reactive({
-  sample.ped() %>%
-    srvyr::filter(C050>=14) %>%
-    srvyr::filter(!(SIT %in% c(0,10))) %>%
-    
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%  
-    
-    srvyr::group_by(AAMM,sit,raca) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=F),
-                   .fill="PIA"
-    ) %>% 
-    select(-n_se) %>% 
-    data.frame()
-})
-
-
-##
-tb4f2 <- reactive({ tb4g2() %>%  
-    dplyr::group_by(sit, raca) %>%
-    dplyr::mutate(
-      media_tb4 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="PIA")) %>%
-    filter(raca!="PIA") %>% 
-    select(AAMM,raca,sit,n,media_tb4) %>% 
-    dplyr::ungroup() %>%
-    select(-c(n)) %>% 
-    tidyr::spread(sit, media_tb4) %>% 
-    dplyr::mutate(PEA = Desempregado+Ocupado,
-                  tx.desemp = round(Desempregado/PEA*100,1)) %>% 
-    select(AAMM,raca,tx.desemp) %>% 
-    tidyr::spread(raca,tx.desemp) %>% 
-    select(AAMM,negro,nao_negro) %>% 
-    data.frame()
-})
-
-
-
-## Posicao domicilio - chefe e nao chefe
-tb4g3 <- reactive({
-  sample.ped() %>%
-    srvyr::filter(C050>=14) %>%
-    srvyr::filter(!(SIT %in% c(0,10))) %>%
-    
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%  
-    
-    srvyr::group_by(AAMM,sit,pos_dom) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=F),
-                   .fill="PIA"
-    ) %>% 
-    select(-n_se) %>% 
-    data.frame()
-})
-
-
-##
-tb4f3 <- reactive({ tb4g3() %>% 
-    dplyr::group_by(sit, pos_dom) %>%
-    dplyr::mutate(
-      media_tb4 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="PIA")) %>%
-    filter(pos_dom!="PIA") %>%
-    dplyr::ungroup() %>% 
-    select(-c(n)) %>% 
-    tidyr::spread(sit, media_tb4) %>% 
-    dplyr::mutate(
-      PEA = Desempregado+Ocupado,
-      tx.desemp = round(Desempregado/PEA*100,1)) %>% 
-    select(AAMM,pos_dom,tx.desemp) %>% 
-    tidyr::spread(pos_dom,tx.desemp) %>% 
-    data.frame()
-})
-
-
-
-### Faixa Etaria
-tb4g4 <- reactive({
-  sample.ped() %>%
-    srvyr::filter(C050>=14) %>%
-    srvyr::filter(!(SIT %in% c(0,10))) %>%
-    
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%
-    
-    srvyr::group_by(AAMM,sit,fxetaria) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=F),
-                   .fill="PIA"
-    ) %>% 
-    select(-n_se) %>%
-    data.frame()
-})
-
-tb4g4_fxet_14e15 <- reactive({ data.frame(AAMM="202004", sit="Ocupado", fxetaria="fxetaria_14a15anos", n=0)})
-
-tb4g4j <- reactive({ tb4g4() %>% 
-    full_join(tb4g4_fxet_14e15()) %>% 
-    arrange(AAMM,sit, fxetaria) %>%
-    data.frame()})
-
-
-##
-tb4f4 <- reactive({ tb4g4j() %>% 
-    dplyr::group_by(sit, fxetaria) %>%
-    dplyr::mutate(
-      media_tb4 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="PIA")) %>%
-    filter(fxetaria!="PIA") %>% 
-    dplyr::ungroup() %>% 
-    select(-c(n)) %>% 
-    tidyr::spread(sit, media_tb4) %>% 
-    dplyr::mutate(
-      PEA = Desempregado+Ocupado,
-      tx.desemp = round(Desempregado/PEA*100,1)) %>%
-    select(AAMM,fxetaria,tx.desemp) %>%
-    tidyr::spread(fxetaria,tx.desemp) %>%
-    data.frame()
-})
-
-
-### Trabalho Anterior
-tb4g5 <- reactive({
-  sample.ped() %>%
-    srvyr::filter(C050>=14) %>%
-    srvyr::filter(!(SIT %in% c(0,10))) %>%
-    
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%
-    
-    srvyr::group_by(AAMM,sit,Desemp,experiencia) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=F),
-                   .fill="PIA"
-    ) %>% 
-    select(-n_se) %>% 
-    data.frame()
-})
-
-
-##
-tb4f5 <- reactive({ tb4g5() %>%  
-    dplyr::group_by(sit, experiencia) %>%
-    dplyr::mutate(
-      media_tb4 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="PIA")) %>%
-    filter(experiencia!="PIA") %>% 
-    select(-Desemp) %>%
-    dplyr::ungroup() %>% 
-    select(-c(n)) %>% 
-    tidyr::spread(sit, media_tb4) %>% 
-    dplyr::mutate(
-      PEA = Desempregado+Ocupado,
-      tx.desemp = round(Desempregado/PEA*100,1)) %>% 
-    select(AAMM,experiencia,tx.desemp) %>% 
-    tidyr::spread(experiencia,tx.desemp) %>% 
-    select(AAMM,sim,nao) %>% 
-    rename(trab_anterior_sim=sim,trab_anterior_nao=nao) %>% 
-    data.frame()
-})
-
-
-### Taxa de desemprego total
-tb4pt <- reactive({
-  tb4p1() %>% 
-    select(-c(n)) %>%   
-    dplyr::group_by(AAMM, sit) %>%
-    dplyr::summarise(media_tb4=sum(media_tb4,na.rm=T)) %>% 
-    tidyr::spread(sit, media_tb4) %>% 
-    dplyr::mutate(
-      PEA = Desempregado+Ocupado,
-      tx.desemp = round(Desempregado/PEA*100,1)) %>% 
-    select(AAMM, tx.desemp) %>% 
-    rename(Total=tx.desemp) %>% 
-    data.frame()})
-
-
-
-### Tab4 Final
-
-tb4 <- reactive({ tb4pt() %>% 
-    left_join(tb4f1(), by=c("AAMM")) %>% 
-    left_join(tb4f2(), by=c("AAMM")) %>% 
-    left_join(tb4f3(), by=c("AAMM")) %>% 
-    left_join(tb4f4(), by=c("AAMM")) %>% 
-    left_join(tb4f5(), by=c("AAMM")) %>% 
-    
-    select(AAMM,Total,Homens,Mulheres,fxetaria_14a15anos,fxetaria_16a24anos,fxetaria_25a39anos,fxetaria_40a49anos,fxetaria_50a59anos,fxetaria_60anosemais,
-           chefe,demais_membros,negro,nao_negro,trab_anterior_sim,trab_anterior_nao) %>% 
-    filter(!(is.na(Total))) %>% 
-    mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-    data.frame()
-})
-
-
-
-######################################################################################
-
-
-
-##################
-###### TABELA 5
-
-
-#### Taxas de Participacao, por Atributos Pessoais
-
-
-### Sexo
-tb5p1 <- reactive({ 
-  tb4g1() %>%
-    dplyr::group_by(sit, sexo) %>%
-    dplyr::mutate(
-      media_tb5 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="PIA")) %>%
-    filter(sexo!="PIA") %>%
-    data.frame()
-})
-
-
-##
-tb5f1 <- reactive({ tb5p1() %>% 
-    select(-c(n)) %>% 
-    tidyr::spread(sit, media_tb5) %>% 
-    dplyr::mutate(
-      PEA = Desempregado+Ocupado,
-      PIA = Desempregado+Ocupado+Inativo,
-      tx.partic = round(PEA/PIA*100,1)) %>% 
-    select(AAMM,sexo,tx.partic) %>% 
-    tidyr::spread(sexo,tx.partic) %>% 
-    data.frame()
-})
-
-
-
-### Raca/cor
-tb5f2 <- reactive({ 
-  tb4g2() %>%
-    dplyr::group_by(sit, raca) %>%
-    dplyr::mutate(
-      media_tb5 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="PIA")) %>%
-    filter(raca!="PIA") %>% 
-    select(AAMM,raca,sit,n,media_tb5) %>% 
-    dplyr::ungroup() %>% 
-    select(-c(n)) %>% 
-    tidyr::spread(sit, media_tb5) %>% 
-    dplyr::mutate(
-      PEA = Desempregado+Ocupado,
-      PIA = Desempregado+Ocupado+Inativo,
-      tx.partic = round(PEA/PIA*100,1)) %>% 
-    select(AAMM,raca,tx.partic) %>% 
-    tidyr::spread(raca,tx.partic) %>% 
-    select(AAMM,negro,nao_negro) %>% 
-    data.frame()
-})
-
-
-
-### Posicao domicilio - chefe e nao chefe
-tb5f3 <- reactive({ 
-  tb4g3() %>%
-    dplyr::group_by(sit, pos_dom) %>%
-    dplyr::mutate(
-      media_tb5 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="PIA")) %>%
-    filter(pos_dom!="PIA") %>% 
-    dplyr::ungroup() %>% 
-    select(-c(n)) %>% 
-    tidyr::spread(sit, media_tb5) %>% 
-    dplyr::mutate(
-      PEA = Desempregado+Ocupado,
-      PIA = Desempregado+Ocupado+Inativo,
-      tx.partic = round(PEA/PIA*100,1)) %>% 
-    select(AAMM,pos_dom,tx.partic) %>% 
-    tidyr::spread(pos_dom,tx.partic) %>% 
-    data.frame()
-})
-
-
-
-### Faixa Etaria
-tb5f4 <- reactive({ 
-  tb4g4j() %>%
-    dplyr::group_by(sit, fxetaria) %>%
-    dplyr::mutate(
-      media_tb5 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="PIA")) %>%
-    filter(fxetaria!="PIA") %>% 
-    dplyr::ungroup() %>% 
-    select(-c(n)) %>% 
-    tidyr::spread(sit, media_tb5) %>% 
-    dplyr::mutate(
-      PEA = Desempregado+Ocupado,
-      PIA = Desempregado+Ocupado+Inativo,
-      tx.partic = round(PEA/PIA*100,1)) %>% 
-    select(AAMM,fxetaria,tx.partic) %>% 
-    tidyr::spread(fxetaria,tx.partic) %>% 
-    data.frame()
-})
-
-
-
-### Taxa de desemprego total
-tb5pt <- reactive({
-  tb5p1() %>% 
-    select(-c(n)) %>%   
-    dplyr::group_by(AAMM, sit) %>%
-    dplyr::summarise(media_tb5=sum(media_tb5,na.rm=T)) %>% 
-    tidyr::spread(sit, media_tb5) %>% 
-    dplyr::mutate(
-      PEA = Desempregado+Ocupado,
-      PIA = Desempregado+Ocupado+Inativo,
-      tx.partic = round(PEA/PIA*100,1)) %>% 
-    select(AAMM, tx.partic) %>% 
-    rename(Total=tx.partic) %>% 
-    data.frame()})
-
-
-
-
-### Tab5 Final
-tb5 <- reactive({ tb5pt() %>% 
-    left_join(tb5f1(), by=c("AAMM")) %>% 
-    left_join(tb5f2(), by=c("AAMM")) %>% 
-    left_join(tb5f3(), by=c("AAMM")) %>% 
-    left_join(tb5f4(), by=c("AAMM")) %>% 
-    
-    select(AAMM,Total,Homens,Mulheres,fxetaria_14a15anos,fxetaria_16a24anos,fxetaria_25a39anos,fxetaria_40a49anos,fxetaria_50a59anos,fxetaria_60anosemais,
-           chefe,demais_membros,negro,nao_negro) %>% 
-    filter(!(is.na(Total))) %>% 
-    mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-    data.frame()
-})
-
-
-
-######################################################################################
-
-
-
-##################
-###### TABELA 6
-
-
-#### Distribuicao dos Desempregados, por Atributos Pessoais e Trabalho Anterior
-
-### Sexo
-tb6p1 <- reactive({ 
-  tb4g1() %>%
-    dplyr::group_by(sit, sexo) %>%
-    dplyr::mutate(
-      media_tb6 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="PIA")) %>%
-    filter(sexo!="PIA") %>%
-    data.frame()
-})
-
-
-##
-tb6f1 <- reactive({ tb6p1() %>% 
-    select(-c(n)) %>% 
-    filter(sit=="Desempregado") %>% 
-    tidyr::spread(sexo, media_tb6) %>% 
-    dplyr::mutate(
-      total = Homens+Mulheres,
-      perc_Homens = round(Homens/total*100,1),
-      perc_Mulheres = round(Mulheres/total*100,1)) %>% 
-    select(AAMM,perc_Homens,perc_Mulheres) %>% 
-    data.frame()
-})
-
-
-
-### Raca/cor
-tb6f2 <- reactive({ 
-  tb4g2() %>%
-    dplyr::group_by(sit, raca) %>%
-    dplyr::mutate(
-      media_tb6 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="PIA")) %>%
-    filter(raca!="PIA") %>% 
-    select(AAMM,raca,sit,n,media_tb6) %>% 
-    dplyr::ungroup() %>% 
-    select(-c(n)) %>% 
-    filter(sit=="Desempregado") %>% 
-    tidyr::spread(raca, media_tb6) %>% 
-    dplyr::mutate(
-      total = nao_negro+negro,
-      perc_nao_negro = round(nao_negro/total*100,1),
-      perc_negro = round(negro/total*100,1)) %>% 
-    select(AAMM,perc_nao_negro,perc_negro) %>% 
-    data.frame()
-})
-
-
-
-### Posicao domicilio - chefe e nao chefe
-tb6f3 <- reactive({ 
-  tb4g3() %>%
-    dplyr::group_by(sit, pos_dom) %>%
-    dplyr::mutate(
-      media_tb6 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="PIA")) %>%
-    filter(pos_dom!="PIA") %>% 
-    dplyr::ungroup() %>% 
-    select(-c(n)) %>% 
-    filter(sit=="Desempregado") %>% 
-    tidyr::spread(pos_dom, media_tb6) %>% 
-    dplyr::mutate(
-      total = chefe+demais_membros,
-      perc_chefe = round(chefe/total*100,1),
-      perc_demais_membros = round(demais_membros/total*100,1)) %>% 
-    select(AAMM,perc_chefe,perc_demais_membros) %>% 
-    data.frame()
-})
-
-
-
-### Faixa Etaria
-tb6f4 <- reactive({ 
-  tb4g4() %>%
-    dplyr::group_by(sit, fxetaria) %>%
-    dplyr::mutate(
-      media_tb6 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="PIA")) %>%
-    filter(fxetaria!="PIA") %>% 
-    dplyr::ungroup() %>% 
-    select(-c(n)) %>% 
-    filter(sit=="Desempregado") %>% 
-    tidyr::spread(fxetaria, media_tb6) %>% 
-    dplyr::mutate(
-      total = fxetaria_14a15anos+fxetaria_16a24anos+fxetaria_25a39anos+fxetaria_40a49anos+fxetaria_50a59anos+fxetaria_60anosemais,
-      perc_fxetaria_14a15anos = round(fxetaria_14a15anos/total*100,1),
-      perc_fxetaria_16a24anos = round(fxetaria_16a24anos/total*100,1),
-      perc_fxetaria_25a39anos = round(fxetaria_25a39anos/total*100,1),
-      perc_fxetaria_40a49anos = round(fxetaria_40a49anos/total*100,1),
-      perc_fxetaria_50a59anos = round(fxetaria_50a59anos/total*100,1),
-      perc_fxetaria_60anosemais = round(fxetaria_60anosemais/total*100,1)
-    ) %>% 
-    select(AAMM,perc_fxetaria_14a15anos,perc_fxetaria_16a24anos,perc_fxetaria_25a39anos,perc_fxetaria_40a49anos,perc_fxetaria_50a59anos,perc_fxetaria_60anosemais) %>% 
-    data.frame()
-})
-
-
-
-### Trabalho Anterior
-tb6f5 <- reactive({ 
-  tb4g5() %>%
-    dplyr::group_by(sit, experiencia) %>%
-    dplyr::mutate(
-      media_tb6 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="PIA")) %>%
-    filter(experiencia!="PIA") %>% 
-    select(-Desemp) %>% 
-    dplyr::ungroup() %>% 
-    select(-c(n)) %>% 
-    filter(sit=="Desempregado") %>% 
-    tidyr::spread(experiencia, media_tb6) %>% 
-    dplyr::mutate(
-      total = sim+nao,
-      perc_trab_anterior_sim = round(sim/total*100,1),
-      perc_trab_anterior_nao = round(nao/total*100,1)) %>% 
-    select(AAMM,perc_trab_anterior_sim,perc_trab_anterior_nao) %>% 
-    data.frame()
-})
-
-
-
-### Taxa de desemprego total
-tb6pt <- reactive({
-  tb6p1() %>% 
-    select(-c(n)) %>%   
-    filter(sit=="Desempregado") %>% 
-    tidyr::spread(sexo, media_tb6) %>% 
-    dplyr::mutate(
-      total = Homens+Mulheres,
-      perc_Total = round(total/total*100,1)) %>% 
-    select(AAMM,perc_Total) %>% 
-    data.frame()})
-
-
-
-### Tab6 Final
-
-tb6 <- reactive({ tb6pt() %>% 
-    left_join(tb6f1(), by=c("AAMM")) %>% 
-    left_join(tb6f2(), by=c("AAMM")) %>% 
-    left_join(tb6f3(), by=c("AAMM")) %>% 
-    left_join(tb6f4(), by=c("AAMM")) %>% 
-    left_join(tb6f5(), by=c("AAMM")) %>% 
-    
-    select(AAMM,perc_Total,perc_Homens,perc_Mulheres,perc_fxetaria_14a15anos,perc_fxetaria_16a24anos,perc_fxetaria_25a39anos,perc_fxetaria_40a49anos,perc_fxetaria_50a59anos,perc_fxetaria_60anosemais,
-           perc_chefe,perc_demais_membros,perc_negro,perc_nao_negro,perc_trab_anterior_sim,perc_trab_anterior_nao) %>% 
-    filter(!(is.na(perc_Total))) %>% 
-    mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-    data.frame()
-})
-
-
-
-######################################################################################
-
-
-
-##################
-###### TABELA 7
-
-
-#### Distribuicao da Populacao Economicamente Ativa, por Atributos Pessoais e Trabalho Anterior
-
-### Sexo
-tb7p1 <- reactive({ 
-  tb4g1() %>%
-    filter(sit %in% c("Desempregado","Ocupado")) %>% 
-    dplyr::group_by(AAMM,sexo) %>%
-    dplyr::summarise(n=sum(n,na.rm=TRUE)) %>% 
-    dplyr::ungroup() %>%
-    dplyr::group_by(sexo) %>%
-    dplyr::mutate(
-      media_tb7 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="PIA")) %>%
-    filter(sexo!="PIA") %>%
-    data.frame()
-})
-
-
-##
-tb7f1 <- reactive({ tb7p1() %>% 
-    select(-c(n)) %>% 
-    tidyr::spread(sexo, media_tb7) %>% 
-    dplyr::mutate(
-      total = Homens+Mulheres,
-      perc_Homens = round(Homens/total*100,1),
-      perc_Mulheres = round(Mulheres/total*100,1)) %>% 
-    select(AAMM,perc_Homens,perc_Mulheres) %>% 
-    data.frame()
-})
-
-
-
-### Raca/cor
-tb7f2 <- reactive({ 
-  tb4g2() %>%
-    filter(sit %in% c("Desempregado","Ocupado")) %>% 
-    dplyr::group_by(AAMM,raca) %>%
-    dplyr::summarise(n=sum(n,na.rm=TRUE)) %>% 
-    dplyr::ungroup() %>%
-    dplyr::group_by(raca) %>%
-    dplyr::mutate(
-      media_tb7 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="PIA")) %>%
-    filter(raca!="PIA") %>% 
-    select(AAMM,raca,n,media_tb7) %>% 
-    dplyr::ungroup() %>% 
-    select(-c(n)) %>% 
-    tidyr::spread(raca, media_tb7) %>% 
-    dplyr::mutate(
-      total = nao_negro+negro,
-      perc_nao_negro = round(nao_negro/total*100,1),
-      perc_negro = round(negro/total*100,1)) %>% 
-    select(AAMM,perc_nao_negro,perc_negro) %>% 
-    data.frame()
-})
-
-
-
-### Posicao domicilio - chefe e nao chefe
-tb7f3 <- reactive({ 
-  tb4g3() %>%
-    filter(sit %in% c("Desempregado","Ocupado")) %>% 
-    dplyr::group_by(AAMM,pos_dom) %>%
-    dplyr::summarise(n=sum(n,na.rm=TRUE)) %>% 
-    dplyr::ungroup() %>%
-    dplyr::group_by(pos_dom) %>%
-    dplyr::mutate(
-      media_tb7 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="PIA")) %>%
-    filter(pos_dom!="PIA") %>% 
-    dplyr::ungroup() %>%  
-    select(-c(n)) %>% 
-    tidyr::spread(pos_dom, media_tb7) %>% 
-    dplyr::mutate(
-      total = chefe+demais_membros,
-      perc_chefe = round(chefe/total*100,1),
-      perc_demais_membros = round(demais_membros/total*100,1)) %>% 
-    select(AAMM,perc_chefe,perc_demais_membros) %>% 
-    data.frame()})
-
-
-
-### Faixa Etaria
-tb7f4 <- reactive({ 
-  tb4g4() %>%
-    filter(sit %in% c("Desempregado","Ocupado")) %>% 
-    dplyr::group_by(AAMM,fxetaria) %>%
-    dplyr::summarise(n=sum(n,na.rm=TRUE)) %>% 
-    dplyr::ungroup() %>%
-    dplyr::group_by(fxetaria) %>%
-    dplyr::mutate(
-      media_tb7 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="PIA")) %>%
-    filter(fxetaria!="PIA") %>% 
-    dplyr::ungroup() %>%  
-    select(-c(n)) %>% 
-    tidyr::spread(fxetaria, media_tb7) %>% 
-    dplyr::mutate(
-      total = fxetaria_14a15anos+fxetaria_16a24anos+fxetaria_25a39anos+fxetaria_40a49anos+fxetaria_50a59anos+fxetaria_60anosemais,
-      perc_fxetaria_14a15anos = round(fxetaria_14a15anos/total*100,1),
-      perc_fxetaria_16a24anos = round(fxetaria_16a24anos/total*100,1),
-      perc_fxetaria_25a39anos = round(fxetaria_25a39anos/total*100,1),
-      perc_fxetaria_40a49anos = round(fxetaria_40a49anos/total*100,1),
-      perc_fxetaria_50a59anos = round(fxetaria_50a59anos/total*100,1),
-      perc_fxetaria_60anosemais = round(fxetaria_60anosemais/total*100,1)
-    ) %>% 
-    select(AAMM,perc_fxetaria_14a15anos,perc_fxetaria_16a24anos,perc_fxetaria_25a39anos,perc_fxetaria_40a49anos,perc_fxetaria_50a59anos,perc_fxetaria_60anosemais) %>% 
-    data.frame()
-})
-
-
-
-### Trabalho Anterior
-tb7f5 <- reactive({ 
-  tb4g5() %>%
-    filter(sit %in% c("Desempregado","Ocupado")) %>% 
-    dplyr::group_by(AAMM,experiencia) %>%
-    dplyr::summarise(n=sum(n,na.rm=TRUE)) %>% 
-    dplyr::ungroup() %>%
-    dplyr::group_by(experiencia) %>%
-    dplyr::mutate(
-      media_tb7 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="PIA")) %>%
-    filter(experiencia!="PIA") %>% 
-    dplyr::ungroup() %>%  
-    select(-c(n)) %>% 
-    tidyr::spread(experiencia, media_tb7) %>% 
-    dplyr::mutate(
-      total = sim+nao,
-      perc_trab_anterior_sim = round(sim/total*100,1),
-      perc_trab_anterior_nao = round(nao/total*100,1)) %>% 
-    select(AAMM,perc_trab_anterior_sim,perc_trab_anterior_nao) %>% 
-    data.frame()
-})
-
-
-
-### Taxa de desemprego total
-tb7pt <- reactive({
-  tb7p1() %>% 
-    select(-c(n)) %>%
-    tidyr::spread(sexo, media_tb7) %>% 
-    dplyr::mutate(
-      total = Homens+Mulheres,
-      perc_Total = round(total/total*100,1)) %>% 
-    select(AAMM,perc_Total) %>% 
-    data.frame()})
-
-
-
-### Tab7 Final
-
-tb7 <- reactive({ tb7pt() %>% 
-    left_join(tb7f1(), by=c("AAMM")) %>% 
-    left_join(tb7f2(), by=c("AAMM")) %>% 
-    left_join(tb7f3(), by=c("AAMM")) %>% 
-    left_join(tb7f4(), by=c("AAMM")) %>% 
-    left_join(tb7f5(), by=c("AAMM")) %>% 
-    
-    select(AAMM,perc_Total,perc_Homens,perc_Mulheres,perc_fxetaria_14a15anos,perc_fxetaria_16a24anos,perc_fxetaria_25a39anos,perc_fxetaria_40a49anos,perc_fxetaria_50a59anos,perc_fxetaria_60anosemais,
-           perc_chefe,perc_demais_membros,perc_negro,perc_nao_negro,perc_trab_anterior_sim,perc_trab_anterior_nao) %>% 
-    filter(!(is.na(perc_Total))) %>% 
-    mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-    data.frame()
-})
-
-
-
-######################################################################################
-
-
-
-##################
-###### TABELA 8
-
-
-#### Estimativas e Indices do Nivel de Ocupacao, por Setor de Atividade
-
-### Nivel de Ocupacao por Setor de Atividade - Sem dividir o Servicos
-tb8p1 <- reactive({
-  sample.ped() %>%
-    srvyr::filter(SIT==4) %>% 
-    srvyr::filter(C050>=14) %>%
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%
-    
-    srvyr::group_by(AAMM,setor) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=T),
-                   .fill="total"
-    ) %>%
-    select(-n_se) %>%
-    filter(AAMM!="total") %>%
-    dplyr::ungroup() %>%
-    dplyr::group_by(setor) %>%
-    dplyr::mutate(
-      media_tb8_1 = round(rollmean(x = n, 3, align = "right", fill = NA)/1000)) %>%
-    select(-n) %>%
-    filter(!is.na(media_tb8_1)) %>%
-    filter(setor!="outros") %>%
-    tidyr::spread(setor, media_tb8_1) %>%
-    
-    dplyr::mutate(
-      ind_total = 100*(total/1253),
-      ind_indtrans = 100*(industria/43),
-      ind_constr = 100*(construcao/83),
-      ind_comerc = 100*(comercio/226),
-      ind_servicos = 100*(servico/881)) %>%
-    
-    select(AAMM, total, ind_total, industria, ind_indtrans, construcao, ind_constr, comercio, ind_comerc, servico, ind_servicos) %>% 
-    data.frame()
-})
-
-
-
-### Servico - Adm Publica
-tb8p2 <- reactive({
-  sample.ped() %>%
-    srvyr::filter(SIT==4) %>% 
-    srvyr::filter(C050>=14) %>%
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%
-    
-    srvyr::group_by(AAMM,setorm) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=T),
-                   .fill="total"
-    ) %>%
-    select(-n_se) %>%
-    filter(AAMM!="total") %>%
-    dplyr::ungroup() %>%
-    dplyr::group_by(setorm) %>%
-    dplyr::mutate(
-      media_tb8_2 = round(rollmean(x = n, 3, align = "right", fill = NA)/1000)) %>%
-    select(-n) %>%
-    filter(!is.na(media_tb8_2)) %>%
-    filter(!(setorm %in% c("outros","NA","total"))) %>%
-    tidyr::spread(setorm, media_tb8_2) %>%
-    
-    dplyr::mutate(
-      ind_admpub = 100*(admpub_defesa_segursocial/212)) %>%
-    
-    data.frame()
-})
-
-
-
-### Tab8 Final
-
-tb8 <- reactive({ tb8p1() %>% 
-    left_join(tb8p2(), by=c("AAMM")) %>% 
-    mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-    data.frame()
-})
-
-
-
-######################################################################################
-
-
-
-##################
-###### TABELA 9
-
-
-#### Distribuicao dos Ocupados, por Setor de Atividade
-
-## Comercio, Construcao, Industria, Servico e Total
-tb9_p1 <- reactive({ 
-  sample.ped() %>%
-    srvyr::filter(SIT==4) %>% 
-    srvyr::filter(C050>=14) %>%
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%
-    srvyr::group_by(AAMM,setor) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=T),
-                   .fill="total"
-    ) %>%
-    select(-n_se) %>%
-    filter(AAMM!="total") %>%
-    dplyr::ungroup() %>%
-    
-    dplyr::group_by(setor) %>%
-    dplyr::mutate(
-      media_tb9_1 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>%
-    select(-n) %>%
-    filter(!is.na(media_tb9_1)) %>%
-    filter(setor!="outros") %>%
-    tidyr::spread(setor, media_tb9_1) %>%
-    data.frame()
-})
-
-
-
-## Administracao Publica, defesa e seguridade social
-tb9_p2 <- reactive({ 
-  sample.ped() %>%
-    srvyr::filter(SIT==4) %>% 
-    srvyr::filter(C050>=14) %>%
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%
-    srvyr::group_by(AAMM,setorm) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=T),
-                   .fill="total"
-    ) %>%
-    select(-n_se) %>%
-    filter(AAMM!="total") %>%
-    dplyr::ungroup() %>%
-    
-    dplyr::group_by(setorm) %>%
-    dplyr::mutate(
-      media_tb9_2 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>%
-    select(-n) %>%
-    filter(!is.na(media_tb9_2)) %>%
-    filter(!(setorm %in% c("outros",NA,"total"))) %>%
-    tidyr::spread(setorm, media_tb9_2) %>%
-    data.frame()
-})
-
-
-
-### Tab9 Final
-
-tb9j <- reactive({ tb9_p1() %>% 
-    left_join(tb9_p2(), by=c("AAMM")) %>% 
-    select(AAMM, total, industria, construcao, comercio, servico, admpub_defesa_segursocial) %>%
-    data.frame()
-})
-
-
-##
-tb9 <- reactive({ tb9j() %>%
-    dplyr::mutate(
-      perc_total = 100.0,
-      perc_indtrans = round(100*(industria/total),1),
-      perc_constr = round(100*(construcao/total),1),
-      perc_comerc = round(100*(comercio/total),1),
-      perc_servicos = round(100*(servico/total),1),
-      perc_admpub = round(100*(admpub_defesa_segursocial/total),1)
-    ) %>%
-    select(AAMM, perc_total, perc_indtrans, perc_constr, perc_comerc, perc_servicos, perc_admpub) %>% 
-    mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-    data.frame()
-})
-
-
-
-######################################################################################
-
-
-
-##################
-###### TABELA 10
-
-
-#### Indices do Nivel de Ocupacao, por Ramo de Atividade
-tb10_p1 <- reactive({
-  sample.ped() %>%
-    srvyr::filter(SIT==4) %>% 
-    srvyr::filter(C050>=14) %>%
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%
-    
-    srvyr::group_by(AAMM,cnae) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=T),
-                   .fill="total"
-    ) %>%
-    select(-n_se) %>%
-    filter(AAMM!="total") %>%
-    dplyr::ungroup() %>%
-    
-    dplyr::group_by(cnae) %>%
-    dplyr::mutate(
-      media_tb10_1 = round(rollmean(x = n, 3, align = "right", fill = NA)/1000)) %>%
-    select(-n) %>%
-    filter(!is.na(media_tb10_1)) %>%
-    tidyr::spread(cnae, media_tb10_1) %>%
-    
-    dplyr::mutate(
-      ind_transporte_armaz_cor = 100*(transporte_armaz_cor/43),
-      ind_inform_comunicacao = 100*(inform_comunicacao/124),
-      ind_ativ_adm_serv_comp = 100*(ativ_adm_serv_comp/102),
-      ind_adm_publica_defesa  = 100*(adm_publica_defesa/388),
-      ind_alojam_alimentacao = 100*(alojam_alimentacao/132),
-      ind_serv_domestico = 100*(serv_domestico/81)) %>%
-    data.frame()
-})
-
-
-
-##
-tb10_p2 <- reactive({
-  sample.ped() %>%
-    srvyr::filter(SIT==4) %>% 
-    srvyr::filter(C050>=14) %>%
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%
-    
-    srvyr::group_by(AAMM,RAMO_CNAEm3) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=T),
-                   .fill="total"
-    ) %>%
-    select(-n_se) %>%
-    filter(AAMM!="total") %>%
-    dplyr::ungroup() %>%
-    
-    dplyr::group_by(RAMO_CNAEm3) %>%
-    dplyr::mutate(
-      media_tb10_2 = round(rollmean(x = n, 3, align = "right", fill = NA)/1000)) %>%
-    select(-n) %>%
-    filter(!is.na(media_tb10_2)) %>%
-    filter(RAMO_CNAEm3!="demais_ocupados") %>%
-    tidyr::spread(RAMO_CNAEm3, media_tb10_2) %>%
-    
-    dplyr::mutate(
-      ind_educacao = 100*(educacao/103),
-      ind_saude = 100*(saude/73)) %>%
-    
-    select(AAMM, educacao, ind_educacao, saude, ind_saude) %>%  
-    data.frame()
-})
-
-
-
-### Tab10 Final
-
-tb10 <- reactive({ tb8() %>% 
-    
-    left_join(tb10_p1(), by=c("AAMM")) %>% 
-    left_join(tb10_p2(), by=c("AAMM")) %>% 
-    
-    select(AAMM, ind_total, ind_indtrans, ind_constr, ind_comerc, ind_servicos, ind_transporte_armaz_cor, ind_inform_comunicacao, ind_ativ_adm_serv_comp, ind_adm_publica_defesa, 
-           ind_admpub, ind_educacao, ind_saude, ind_alojam_alimentacao, ind_serv_domestico) %>% 
-    mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-    data.frame()
   
-})
-
-
-######################################################################################
-
-
-
-##################
-###### TABELA 11
-
-
-#### Estimativas e Indices do Nivel de Ocupacao, por Posicao na Ocupacao
-tb11_p1 <- reactive({
-  sample.ped() %>%
-    srvyr::filter(SIT==4) %>% 
-    srvyr::filter(C050>=14) %>%
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%
-    
-    srvyr::group_by(AAMM,pos_ocup1) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=T),
-                   .fill="total"
-    ) %>%
-    select(-n_se) %>%
-    filter(AAMM!="total") %>%
-    dplyr::ungroup() %>%
-    
-    dplyr::group_by(pos_ocup1) %>%
-    dplyr::mutate(
-      media_tb11_1 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>%
-    select(-n) %>%
-    filter(!is.na(media_tb11_1)) %>%
-    dplyr::ungroup() %>%
-    
-    dplyr::mutate(media_tb11_1=round(media_tb11_1)) %>%
-    tidyr::spread(pos_ocup1, media_tb11_1) %>%
-    data.frame()
-})
-
-
-##
-tb11_p2 <- reactive({
-  sample.ped() %>%
-    srvyr::filter(SIT==4) %>% 
-    srvyr::filter(C050>=14) %>%
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%
-    
-    srvyr::group_by(AAMM,pos_ocup2) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=T),
-                   .fill="ocupado"
-    ) %>%
-    select(-n_se) %>%
-    filter(AAMM!="ocupado") %>%
-    dplyr::ungroup() %>%
-    
-    dplyr::group_by(pos_ocup2) %>%
-    dplyr::mutate(
-      media_tb11_2 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>%
-    select(-n) %>%
-    filter(!is.na(media_tb11_2)) %>%
-    dplyr::ungroup() %>%
-    
-    dplyr::mutate(media_tb11_2=round(media_tb11_2)) %>% 
-    tidyr::spread(pos_ocup2, media_tb11_2) %>%
-    data.frame()
-})
-
-
-##
-tb11_p3 <- reactive({
-  sample.ped() %>%
-    srvyr::filter(SIT==4) %>% 
-    srvyr::filter(C050>=14) %>%
-    srvyr::mutate(pos_ocup1=as.character(pos_ocup1),
-                  pos_ocup_setor_priv=case_when(pos_ocup1=="ass_priv_c_cart"~"assalariado_setor_priv",
-                                                pos_ocup1=="ass_priv_s_cart"~"assalariado_setor_priv",
-                                                TRUE~pos_ocup1)) %>% 
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%
-    
-    srvyr::group_by(AAMM,pos_ocup_setor_priv) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=T),
-                   .fill="total"
-    ) %>%
-    select(-n_se) %>%
-    filter(AAMM!="total") %>%
-    dplyr::ungroup() %>%
-    
-    dplyr::group_by(pos_ocup_setor_priv) %>%
-    dplyr::mutate(
-      media_tb11_3 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>%
-    select(-n) %>%
-    filter(!is.na(media_tb11_3)) %>%
-    dplyr::ungroup() %>%
-    
-    dplyr::mutate(media_tb11_3=round(media_tb11_3)) %>%
-    tidyr::spread(pos_ocup_setor_priv, media_tb11_3) %>%
-    select(AAMM, assalariado_setor_priv) %>%
-    data.frame()
-})
-
-
-
-### Tab11 Final
-
-tb11 <- reactive({ tb11_p1() %>% 
-    left_join(tb11_p2(), by=c("AAMM")) %>% 
-    left_join(tb11_p3(), by=c("AAMM")) %>% 
-    
-    dplyr::rename(setor_privado=assalariado_setor_priv) %>% 
-    dplyr::mutate(ind_ocup = 100*(ocupado/1253),
-                  ind_assal_tot = 100*(assalariado/927),
-                  ind_assal_priv = 100*(setor_privado/623),
-                  ind_assal_priv_c_cart = 100*(ass_priv_c_cart/527),
-                  ind_assal_priv_s_cart = 100*(ass_priv_s_cart/97),
-                  ind_assal_publ = 100*(ass_pub/304),
-                  ind_autonomos = 100*(autonomo/144),
-                  ind_emp_dom = 100*(empreg_domestico/81)) %>% 
-    
-    select(AAMM, ocupado, ind_ocup, assalariado, ind_assal_tot, setor_privado, ind_assal_priv, ass_priv_c_cart, ind_assal_priv_c_cart, 
-           ass_priv_s_cart, ind_assal_priv_s_cart, ass_pub, ind_assal_publ, autonomo, ind_autonomos, empreg_domestico, ind_emp_dom) %>% 
-    mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-    
-    data.frame()
-})
-
-
-
-######################################################################################
-
-
-
-##################
-###### TABELA 12
-
-
-#### Distribuicao dos Ocupados, por Posicao na Ocupacao
-tb11_p1m <- reactive({
-  sample.ped() %>%
-    srvyr::filter(SIT==4) %>% 
-    srvyr::filter(C050>=14) %>%
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%
-    
-    srvyr::group_by(AAMM,pos_ocup1) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=T),
-                   .fill="total"
-    ) %>%
-    select(-n_se) %>%
-    filter(AAMM!="total") %>%
-    dplyr::ungroup() %>%
-    
-    dplyr::group_by(pos_ocup1) %>%
-    dplyr::mutate(
-      media_tb11_1 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>%
-    select(-n) %>%
-    filter(!is.na(media_tb11_1)) %>%
-    dplyr::ungroup() %>%
-    
-    tidyr::spread(pos_ocup1, media_tb11_1) %>%
-    
-    data.frame()})
-
-
-
-##
-tb11_p2m <- reactive({
-  sample.ped() %>%
-    srvyr::filter(SIT==4) %>% 
-    srvyr::filter(C050>=14) %>%
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%
-    
-    srvyr::group_by(AAMM,pos_ocup2) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=T),
-                   .fill="ocupado"
-    ) %>%
-    select(-n_se) %>%
-    filter(AAMM!="ocupado") %>%
-    dplyr::ungroup() %>%
-    
-    dplyr::group_by(pos_ocup2) %>%
-    dplyr::mutate(
-      media_tb11_2 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>%
-    select(-n) %>%
-    filter(!is.na(media_tb11_2)) %>%
-    dplyr::ungroup() %>%
-    
-    tidyr::spread(pos_ocup2, media_tb11_2) %>%
-    data.frame()})
-
-
-
-### Tab12 Final
-
-tb11m <- reactive({ tb11_p1m() %>% 
-    left_join(tb11_p2m(), by=c("AAMM")) %>% 
-    mutate(setor_privado=(ass_priv_c_cart+ass_priv_s_cart)) %>% 
-    data.frame()})
-
-
-##
-tb12 <- reactive({ tb11m() %>% 
-    dplyr::mutate(perc_ocupado=100.0,
-                  perc_assalariado = round(assalariado/ocupado*100,1),
-                  perc_setor_privado = round(setor_privado/ocupado*100,1),
-                  perc_ass_priv_c_cart = round(ass_priv_c_cart/ocupado*100,1),
-                  perc_ass_priv_s_cart = round(ass_priv_s_cart/ocupado*100,1),
-                  perc_ass_pub = round(ass_pub/ocupado*100,1),
-                  perc_autonomo = round(autonomo/ocupado*100,1),
-                  perc_empreg_domestico = round(empreg_domestico/ocupado*100,1)) %>% 
-    
-    select(AAMM,perc_ocupado, perc_assalariado, perc_setor_privado, perc_ass_priv_c_cart, perc_ass_priv_s_cart, perc_ass_pub, 
-           perc_autonomo, perc_empreg_domestico) %>% 
-    mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-    
-    data.frame()
-})
-
-
-
-######################################################################################
-
-
-
-##################
-###### TABELA 13
-
-
-#### Distribuicao dos Ocupados, por Atributos Pessoais e Trabalho Anterior
-
-### Sexo
-tb13g1 <- reactive({ 
-  sample.ped() %>%
-    srvyr::filter(SIT==4) %>% 
-    srvyr::filter(C050>=14) %>%
-    
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%  
-    
-    srvyr::group_by(AAMM,sexo) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=F),
-                   .fill="total"
-    ) %>% 
-    select(-n_se) %>%
-    filter(AAMM!="total") %>%
-    dplyr::ungroup() %>%
-    
-    dplyr::group_by(sexo) %>%
-    dplyr::mutate(
-      media_tb13 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="total")) %>%
-    filter(!is.na(sexo)) %>%
-    select(-c(n)) %>% 
-    tidyr::spread(sexo, media_tb13) %>% 
-    dplyr::mutate(perc_hom=round(100*Homens/total,1),
-                  perc_mul=round(100*Mulheres/total,1)) %>% 
-    data.frame()
-})
-
-
-
-### Raca/cor
-tb13g2 <- reactive({
-  sample.ped() %>%
-    srvyr::filter(SIT==4) %>% 
-    srvyr::filter(C050>=14) %>%
-    
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%  
-    
-    filter(!is.na(raca)) %>%
-    srvyr::group_by(AAMM,raca) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=F),
-                   .fill="total"
-    ) %>% 
-    select(-n_se) %>%
-    filter(AAMM!="total") %>%
-    dplyr::ungroup() %>%
-    
-    dplyr::group_by(raca) %>%
-    dplyr::mutate(
-      media_tb13 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="total")) %>%
-    select(-c(n)) %>% 
-    tidyr::spread(raca, media_tb13) %>%
-    dplyr::mutate(perc_negro=round(100*negro/total,1),
-                  perc_nao_negro=round(100*nao_negro/total,1)) %>%
-    data.frame()
-})
-
-
-
-## Posicao domicilio - chefe e nao chefe
-tb13g3 <- reactive({
-  sample.ped() %>%
-    srvyr::filter(SIT==4) %>% 
-    srvyr::filter(C050>=14) %>%
-    
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%  
-    
-    srvyr::group_by(AAMM,pos_dom) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=F),
-                   .fill="total"
-    ) %>%
-    select(-n_se) %>%
-    filter(AAMM!="total") %>%
-    dplyr::ungroup() %>%
-    
-    dplyr::group_by(pos_dom) %>%
-    dplyr::mutate(
-      media_tb13 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="total")) %>%
-    filter(!is.na(pos_dom)) %>%
-    select(-c(n)) %>% 
-    tidyr::spread(pos_dom, media_tb13) %>%
-    dplyr::mutate(perc_chefe=round(100*chefe/total,1),
-                  perc_demais_membros=round(100*demais_membros/total,1)) %>%
-    data.frame()
-})
-
-
-
-### Faixa Etaria
-tb13g4g <- reactive({
-  sample.ped() %>%
-    srvyr::filter(SIT==4) %>% 
-    srvyr::filter(C050>=14) %>%
-    
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%
-    
-    srvyr::group_by(AAMM,fxetaria) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=F),
-                   .fill="total"
-    ) %>% 
-    select(-n_se) %>%
-    filter(AAMM!="total") %>%
-    dplyr::ungroup() %>%
-    data.frame()})
-
-
-tb13g4_fxet_14e15 <- reactive({ data.frame(AAMM="202004", fxetaria="fxetaria_14a15anos", n=0)})
-tb13g4gj <- reactive({ tb13g4g() %>% 
-    full_join(tb13g4_fxet_14e15()) %>% 
-    arrange(AAMM, fxetaria) %>% 
-    data.frame()})
-
-
-tb13g4 <- reactive({ tb13g4gj() %>% 
-    dplyr::group_by(fxetaria) %>%
-    dplyr::mutate(
-      media_tb13 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="total")) %>%
-    filter(!is.na(fxetaria)) %>%
-    select(-c(n)) %>% 
-    tidyr::spread(fxetaria, media_tb13) %>%
-    dplyr::mutate(
-      perc_fxetaria_14a15anos = round(fxetaria_14a15anos/total*100,1),
-      perc_fxetaria_16a24anos = round(fxetaria_16a24anos/total*100,1),
-      perc_fxetaria_25a39anos = round(fxetaria_25a39anos/total*100,1),
-      perc_fxetaria_40a49anos = round(fxetaria_40a49anos/total*100,1),
-      perc_fxetaria_50a59anos = round(fxetaria_50a59anos/total*100,1),
-      perc_fxetaria_60anosemais = round(fxetaria_60anosemais/total*100,1)) %>% 
-    data.frame()
-})
-
-
-
-### Trabalho Anterior
-tb13g5 <- reactive({
-  sample.ped() %>%
-    srvyr::filter(SIT==4) %>% 
-    srvyr::filter(C050>=14) %>%
-    
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%
-    
-    srvyr::group_by(AAMM,experiencia) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=F),
-                   .fill="total"
-    ) %>% 
-    select(-n_se) %>%
-    filter(AAMM!="total") %>%
-    dplyr::ungroup() %>%
-    
-    dplyr::group_by(experiencia) %>%
-    dplyr::mutate(
-      media_tb13 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="total")) %>%
-    filter(!is.na(experiencia)) %>%
-    select(-c(n)) %>% 
-    tidyr::spread(experiencia, media_tb13) %>%
-    dplyr::mutate(perc_sim=round(100*sim/total,1),
-                  perc_nao=round(100*nao/total,1)) %>%
-    
-    data.frame()
-})
-
-
-
-### Tab13 Final
-
-tb13 <- reactive({ tb13g1() %>% 
-    left_join(tb13g2(), by=c("AAMM")) %>% 
-    left_join(tb13g3(), by=c("AAMM")) %>% 
-    left_join(tb13g4(), by=c("AAMM")) %>% 
-    left_join(tb13g5(), by=c("AAMM")) %>% 
-    
-    filter(!is.na(perc_hom)) %>%
-    dplyr::mutate(perc_total=100.0) %>% 
-    select(AAMM, perc_total, perc_hom, perc_mul, perc_fxetaria_14a15anos, perc_fxetaria_16a24anos, perc_fxetaria_25a39anos, 
-           perc_fxetaria_40a49anos, perc_fxetaria_50a59anos, perc_fxetaria_60anosemais,
-           perc_chefe, perc_demais_membros, perc_negro, perc_nao_negro, perc_sim, perc_nao) %>%
-    mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-    
-    data.frame()
-})
-
-
-
-######################################################################################
-
-
-
-##################
-###### TABELA 19 
-
-#### Distribuicao da Populacao Inativa de 14 Anos e Mais, por Atributos Pessoais e Trabalho Anterior
-
-### Sexo
-tb19g1 <- reactive({ 
-  sample.ped() %>%
-    srvyr::filter(SIT %in% c(5,6)) %>% 
-    srvyr::filter(C050>=14) %>%
-    
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%  
-    
-    srvyr::group_by(AAMM,sexo) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=F),
-                   .fill="total"
-    ) %>% 
-    select(-n_se) %>%
-    filter(AAMM!="total") %>%
-    dplyr::ungroup() %>%
-    
-    dplyr::group_by(sexo) %>%
-    dplyr::mutate(
-      media_tb19 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="total")) %>%
-    filter(!is.na(sexo)) %>%
-    select(-c(n)) %>% 
-    tidyr::spread(sexo, media_tb19) %>% 
-    dplyr::mutate(perc_hom=round(100*Homens/total,1),
-                  perc_mul=round(100*Mulheres/total,1)) %>% 
-    data.frame()
-})
-
-
-### Raca/cor
-tb19g2 <- reactive({
-  sample.ped() %>%
-    srvyr::filter(SIT %in% c(5,6)) %>% 
-    srvyr::filter(C050>=14) %>%
-    
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%  
-    
-    filter(!is.na(raca)) %>%
-    srvyr::group_by(AAMM,raca) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=F),
-                   .fill="total"
-    ) %>% 
-    select(-n_se) %>%
-    filter(AAMM!="total") %>%
-    dplyr::ungroup() %>%
-    
-    dplyr::group_by(raca) %>%
-    dplyr::mutate(
-      media_tb19 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="total")) %>%
-    select(-c(n)) %>% 
-    tidyr::spread(raca, media_tb19) %>%
-    dplyr::mutate(perc_negro=round(100*negro/total,1),
-                  perc_nao_negro=round(100*nao_negro/total,1)) %>%
-    data.frame()
-})
-
-
-
-## Posicao domicilio - chefe e nao chefe
-tb19g3 <- reactive({
-  sample.ped() %>%
-    srvyr::filter(SIT %in% c(5,6)) %>% 
-    srvyr::filter(C050>=14) %>%
-    
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%  
-    
-    srvyr::group_by(AAMM,pos_dom) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=F),
-                   .fill="total"
-    ) %>%
-    select(-n_se) %>%
-    filter(AAMM!="total") %>%
-    dplyr::ungroup() %>%
-    
-    dplyr::group_by(pos_dom) %>%
-    dplyr::mutate(
-      media_tb19 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="total")) %>%
-    filter(!is.na(pos_dom)) %>%
-    select(-c(n)) %>% 
-    tidyr::spread(pos_dom, media_tb19) %>%
-    dplyr::mutate(perc_chefe=round(100*chefe/total,1),
-                  perc_demais_membros=round(100*demais_membros/total,1)) %>%
-    data.frame()
-})
-
-
-
-### Faixa Etaria
-tb19g4 <- reactive({
-  sample.ped() %>%
-    srvyr::filter(SIT %in% c(5,6)) %>% 
-    srvyr::filter(C050>=14) %>%
-    
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%
-    
-    srvyr::group_by(AAMM,fxetaria) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=F),
-                   .fill="total"
-    ) %>% 
-    select(-n_se) %>%
-    filter(AAMM!="total") %>%
-    dplyr::ungroup() %>%
-    
-    dplyr::group_by(fxetaria) %>%
-    dplyr::mutate(
-      media_tb19 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="total")) %>%
-    filter(!is.na(n)) %>%
-    select(-c(n)) %>% 
-    tidyr::spread(fxetaria, media_tb19) %>%
-    dplyr::mutate(
-      perc_fxetaria_14a15anos = round(fxetaria_14a15anos/total*100,1),
-      perc_fxetaria_16a24anos = round(fxetaria_16a24anos/total*100,1),
-      perc_fxetaria_25a39anos = round(fxetaria_25a39anos/total*100,1),
-      perc_fxetaria_40a49anos = round(fxetaria_40a49anos/total*100,1),
-      perc_fxetaria_50a59anos = round(fxetaria_50a59anos/total*100,1),
-      perc_fxetaria_60anosemais = round(fxetaria_60anosemais/total*100,1)) %>% 
-    data.frame()})
-
-
-
-### Trabalho Anterior
-tb19g5 <- reactive({
-  sample.ped() %>%
-    srvyr::filter(SIT %in% c(5,6)) %>% 
-    srvyr::filter(C050>=14) %>%
-    
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%
-    
-    srvyr::group_by(AAMM,experiencia) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=F),
-                   .fill="total"
-    ) %>% 
-    select(-n_se) %>%
-    filter(AAMM!="total") %>%
-    dplyr::ungroup() %>%
-    
-    dplyr::group_by(experiencia) %>%
-    dplyr::mutate(
-      media_tb19 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="total")) %>%
-    filter(!is.na(experiencia)) %>%
-    select(-c(n)) %>% 
-    tidyr::spread(experiencia, media_tb19) %>%
-    dplyr::mutate(perc_sim=round(100*sim/total,1),
-                  perc_nao=round(100*nao/total,1)) %>%
-    
-    data.frame()
-})
-
-
-
-### Tab19 Final
-
-tb19 <- reactive({ tb19g1() %>% 
-    left_join(tb19g2(), by=c("AAMM")) %>% 
-    left_join(tb19g3(), by=c("AAMM")) %>% 
-    left_join(tb19g4(), by=c("AAMM")) %>% 
-    left_join(tb19g5(), by=c("AAMM")) %>% 
-    
-    filter(!is.na(perc_hom)) %>%
-    
-    dplyr::mutate(perc_total=100.0) %>% 
-    select(AAMM, perc_total, perc_hom, perc_mul, perc_fxetaria_14a15anos, perc_fxetaria_16a24anos, perc_fxetaria_25a39anos, 
-           perc_fxetaria_40a49anos, perc_fxetaria_50a59anos, perc_fxetaria_60anosemais,
-           perc_chefe, perc_demais_membros, perc_negro, perc_nao_negro, perc_sim, perc_nao) %>%
-    mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-    
-    data.frame()
-})
-
-
-
-######################################################################################
-
-
-
-##################
-###### TABELA 20 
-
-
-#### Distribuicao da Populacao Inativa de 14 Anos e Mais, com Experiencia Anterior de Trabalho, por Faixa de Tempo em que Perdeu ou Deixou o ultimo Trabalho
-tb20 <- reactive({ 
-  sample.ped() %>%
-    srvyr::filter(SIT %in% c(5,6)) %>% 
-    srvyr::filter(C050>=14) %>%
-    
-    srvyr::mutate(count=1,
-                  AAMM=as.character(AAMM)) %>%  
-    
-    srvyr::filter(tperd_inat_nome!="Missing") %>% 
-    srvyr::group_by(AAMM,tperd_inat_nome) %>%
-    
-    srvyr::cascade(n=survey_total(count,na.rm=F),
-                   .fill="total"
-    ) %>% 
-    select(-n_se) %>%
-    filter(AAMM!="total") %>%
-    dplyr::ungroup() %>%
-    
-    dplyr::group_by(tperd_inat_nome) %>%
-    dplyr::mutate(
-      media_tb20 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="total")) %>%
-    filter(!is.na(media_tb20)) %>%
-    select(-c(n)) %>% 
-    tidyr::spread(tperd_inat_nome, media_tb20) %>% 
-    dplyr::mutate(perc_total=100.0,
-                  perc_ate6meses=round(Ate6meses/total*100,1),
-                  perc_maisde6mesesa1ano=round(Maisde6mesesa1ano/total*100,1),
-                  perc_maisde1a2anos=round(Maisde1a2anos/total*100,1),
-                  perc_maisde2a3anos=round(Maisde2a3anos/total*100,1),
-                  perc_maisde3a5anos=round(Maisde3a5anos/total*100,1),
-                  perc_maisde5anos=round(Maisde5anos/total*100,1)) %>% 
-    select(AAMM,perc_total:perc_maisde5anos) %>% 
-    mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-    data.frame()
-})
-
-
-
-######################################################################################
-
-
-
-##################
-###### TABELA 21 
-
-
-#### Distribuicao da Populacao Inativa de 14 Anos e Mais,  por Principal Condicao de Atividade 
-tb21 <- reactive({ 
-  sample.ped() %>%
-    srvyr::filter(SIT %in% c(5,6)) %>% 
-    srvyr::filter(C050>=14) %>%
-    
-    srvyr::mutate(count=1,
-                  AAMM=as.character(AAMM)) %>%  
-    
-    srvyr::filter(cond_ativg!=100) %>% 
-    srvyr::group_by(AAMM,cond_ativ) %>%
-    
-    srvyr::cascade(n=survey_total(count,na.rm=F),
-                   .fill="total"
-    ) %>% 
-    select(-n_se) %>%
-    filter(AAMM!="total") %>%
-    dplyr::ungroup() %>%
-    
-    dplyr::group_by(cond_ativ) %>%
-    dplyr::mutate(
-      media_tb21 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="total")) %>%
-    filter(!is.na(media_tb21)) %>%
-    select(-c(n)) %>% 
-    tidyr::spread(cond_ativ, media_tb21) %>% 
-    dplyr::mutate(perc_total=100.0,
-                  perc_aposent=round(Aposentado/total*100,1),
-                  perc_estud=round(Estudante/total*100,1),
-                  perc_dedi_afazerdomest=round(Dedicadoafazeresdomesticos/total*100,1),
-                  perc_lic_saude=round(Licenciadoporsaude/total*100,1),
-                  perc_outros=round(Outros/total*100,1)) %>% 
-    select(AAMM,perc_total:perc_outros) %>% 
-    mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-    data.frame()
-})
-
-
-
-######################################################################################
-
-
-
-##################
-###### TAB TEXTO DO ANEXO
-
-
-#### Taxa de Desemprego Total, por Grupos de Regioes Administrativas
-tb_texto_p1 <- reactive({
-  sample.ped() %>%
-    srvyr::filter(C050>=14) %>%
-    srvyr::filter(!(SIT %in% c(0,10))) %>%
-    
-    srvyr::mutate(
-      count=1,
-      AAMM=as.character(AAMM)) %>%
-    srvyr::group_by(AAMM,sit,grupo) %>%
-    srvyr::cascade(n=survey_total(count,na.rm=F),
-                   .fill="PIA"
-    ) %>% 
-    select(-n_se) %>% 
-    dplyr::ungroup() %>%
-    dplyr::group_by(sit, grupo) %>%
-    dplyr::mutate(
-      media_tbtexto = rollmean(x = n, 6, align = "right", fill = NA)/1000) %>% 
-    filter(!(AAMM=="PIA")) %>%
-    filter(grupo!="PIA") %>% 
-    filter(!(is.na(media_tbtexto))) %>%
-    select(-n) %>%
-    
-    dplyr::ungroup() %>%
-    data.frame()
-})
-
-
-## Fazer taxa de desemprego total
-tb_texto_p2 <- reactive({
-  tb_texto_p1() %>% 
-    dplyr::group_by(AAMM, sit) %>%
-    dplyr::summarise(media_tbtexto=sum(media_tbtexto,na.rm=T)) %>% 
-    tidyr::spread(sit, media_tbtexto) %>%
-    dplyr::mutate(
-      PEA = Desempregado+Ocupado,
-      tx.desemp = Desempregado/PEA*100) %>%
-    select(AAMM, tx.desemp) %>%
-    rename(Total=tx.desemp) %>%
-    data.frame()
-})
-
-
-
-### Tab texto Final
-
-tb_texto <- reactive({ 
-  tb_texto_p1() %>% 
-    tidyr::spread(sit, media_tbtexto) %>%
-    dplyr::mutate(
-      PEA = Desempregado+Ocupado,
-      tx.desemp = round(Desempregado/PEA*100,1)) %>% 
-    select(AAMM, grupo, tx.desemp) %>% 
-    
-    tidyr::spread(grupo, tx.desemp) %>% 
-    
-    left_join(tb_texto_p2(), by=c("AAMM")) %>% 
-    dplyr::mutate(Total=round(Total,1)) %>% 
-    
-    select(AAMM, Total, Grupo_1, Grupo_2, Grupo_3, Grupo_4) %>% 
-    filter(!(is.na(Total))) %>% 
-    data.frame()
-})
   
-
+  ##################
+  ###### TABELA 1
+  
+  
+  #### Estimativas da Populacao em Idade Ativa de 14 Anos e Mais e Taxas de Participacao e de Desemprego Total
+  
+  tb1p1 <- reactive({
+    sample.ped() %>%
+      srvyr::filter(C050>=14) %>%
+      srvyr::filter(!(SIT %in% c(0,10))) %>%
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%
+      srvyr::group_by(AAMM,sit) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=F),
+                     .fill="PIA") %>% 
+      select(-n_se) %>% 
+      dplyr::ungroup() %>%
+      dplyr::group_by(sit) %>%
+      dplyr::mutate(media_tb1 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="PIA")) %>%
+      dplyr::ungroup() %>%
+      
+      select(-c(n)) %>% 
+      tidyr::spread(sit, media_tb1) %>% 
+      dplyr::mutate(
+        PEA = Desempregado+Ocupado,
+        tx.desemp = round(Desempregado/PEA*100,1),
+        tx.partic = round(PEA/PIA*100,1)) %>% 
+      filter(!(is.na(PIA))) %>% 
+      data.frame()})
+  
+  
+  ## Fazer a media movel com 3 periodos para populacao total
+  tb1p2 <- reactive({
+    sample.ped() %>%
+      srvyr::mutate(count=1,
+                    AAMM=as.character(AAMM)) %>%
+      srvyr::group_by(AAMM) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=F)) %>% 
+      select(-n_se) %>% 
+      dplyr::mutate(
+        pop_total = round(rollmean(x = n, 3, align = "right", fill = NA)/1000)) %>% 
+      select(AAMM,pop_total) %>% 
+      data.frame()})
+  
+  
+  
+  ### Tab1 final
+  
+  tb1 <- reactive({ tb1p1() %>% 
+      dplyr::mutate(
+        PIA=round(PIA),
+        PEA=round(PEA),
+        Ocupado=round(Ocupado),
+        Desempregado=round(Desempregado),
+        Inativo=round(Inativo),
+        ind_pia = 100*(PIA/2121),
+        ind_pea = 100*(PEA/1421),
+        ind_ocup = 100*(Ocupado/1253),
+        ind_desemp = 100*(round(Desempregado)/168),
+        ind_inat = 100*(Inativo/700)) %>% 
+      left_join(tb1p2(), by=c("AAMM")) %>% 
+      select(AAMM, PIA, ind_pia, PEA, ind_pea, Ocupado, ind_ocup, Desempregado, ind_desemp, Inativo, ind_inat, tx.partic, tx.desemp, pop_total) %>% 
+      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
+      data.frame()
+  })
+  
+  
+  
+  ######################################################################################
+  
+  
+  
+  ##################
+  ###### TABELA 2
+  
+  
+  #### Estimativas da Populacao Desempregada e Taxas de Desemprego, por Tipo
+  
+  tb2p1 <- reactive({
+    sample.ped() %>%
+      srvyr::filter(C050>=14) %>%
+      srvyr::filter(!(SIT %in% c(0,4,5,6,10))) %>%
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%
+      srvyr::group_by(AAMM,sit2) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=F, vartype="ci"),
+                     .fill="total"
+      ) %>% 
+      dplyr::ungroup() %>%
+      dplyr::group_by(sit2) %>%
+      dplyr::mutate(
+        media_tb2 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="total")) %>% 
+      dplyr::ungroup() %>%
+      
+      select(-c(n, n_low, n_upp)) %>% 
+      tidyr::spread(sit2, media_tb2) %>% 
+      data.frame()})
+  
+  
+  ##
+  tb2p2 <- reactive({
+    sample.ped() %>%
+      srvyr::filter(C050>=14) %>%
+      srvyr::filter(!(SIT %in% c(0,2,4,5,6,10))) %>%
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%
+      srvyr::group_by(AAMM,sit3) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=F, vartype="ci"),
+                     .fill="Desemp_Oculto"
+      ) %>% 
+      dplyr::ungroup() %>%
+      dplyr::group_by(sit3) %>%
+      dplyr::mutate(
+        media_tb2 =rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="Desemp_Oculto")) %>% 
+      dplyr::ungroup() %>%
+      
+      select(-c(n, n_low, n_upp)) %>% 
+      tidyr::spread(sit3, media_tb2) %>% 
+      data.frame()})
+  
+  
+  
+  ### Tab2 final
+  tb2 <- reactive({ tb2p1() %>%
+      full_join(tb2p2()) %>%
+      filter(!(is.na(total))) %>%
+      left_join(tb1p1(), by=c("AAMM")) %>%
+      dplyr::mutate(
+        tx.desemp=round(tx.desemp,1),
+        tx.desemp.aberto=round(Desemp_Aberto/PEA*100,1),
+        tx.desemp.oculto=round(Desemp_Oculto/PEA*100,1),
+        tx.desemp.oculto.precario=round(Desemp_Oculto_Precario/PEA*100,1),
+        tx.desemp.oculto.desalento=round(Desemp_Oculto_Desalento/PEA*100,1),
+        total = round(total),
+        Desemp_Aberto = round(Desemp_Aberto),
+        Desemp_Oculto = round(Desemp_Oculto),
+        Desemp_Oculto_Precario = round(Desemp_Oculto_Precario),
+        Desemp_Oculto_Desalento = round(Desemp_Oculto_Desalento)
+      ) %>% 
+      select(AAMM, total, tx.desemp,  Desemp_Aberto, tx.desemp.aberto,  Desemp_Oculto, tx.desemp.oculto, Desemp_Oculto_Precario, tx.desemp.oculto.precario, Desemp_Oculto_Desalento, tx.desemp.oculto.desalento) %>% 
+      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
+      data.frame()
+  })
+  
+  
+  
+  ######################################################################################
+  
+  
+  
+  ##################
+  ###### TABELA 3
+  
+  
+  #### Taxa de Desemprego Total, por Grupos de Regi?es Administrativas
+  
+  tb3p1 <- reactive({
+    sample.ped() %>%
+      srvyr::filter(C050>=14) %>%
+      srvyr::filter(!(SIT %in% c(0,10))) %>%
+      
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%
+      srvyr::group_by(AAMM,sit,grupo) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=F),
+                     .fill="PIA"
+      ) %>% 
+      select(-n_se) %>% 
+      dplyr::ungroup() %>%
+      dplyr::group_by(sit, grupo) %>%
+      dplyr::mutate(
+        media_tb3 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="PIA")) %>%
+      filter(grupo!="PIA") %>% 
+      data.frame()})
+  
+  
+  
+  ## Fazer taxa de desemprego total
+  tb3p2 <- reactive({
+    tb3p1() %>% 
+      select(-c(n)) %>%   
+      dplyr::group_by(AAMM, sit) %>%
+      dplyr::summarise(media_tb3=sum(media_tb3,na.rm=T)) %>% 
+      tidyr::spread(sit, media_tb3) %>% 
+      dplyr::mutate(
+        PEA = Desempregado+Ocupado,
+        tx.desemp = round(Desempregado/PEA*100,1)) %>% 
+      select(AAMM, tx.desemp) %>% 
+      rename(Total=tx.desemp) %>% 
+      data.frame()})
+  
+  
+  
+  ### Tab3 final
+  tb3 <- reactive({ 
+    tb3p1() %>% 
+      select(-c(n)) %>% 
+      tidyr::spread(sit, media_tb3) %>% 
+      dplyr::mutate(
+        PEA = Desempregado+Ocupado,
+        tx.desemp = round(Desempregado/PEA*100,1)) %>% 
+      select(AAMM, grupo, tx.desemp) %>% 
+      
+      tidyr::spread(grupo, tx.desemp) %>% 
+      
+      left_join(tb3p2(), by=c("AAMM")) %>% 
+      
+      select(AAMM, Total, Grupo_1, Grupo_2, Grupo_3, Grupo_4) %>% 
+      filter(!(is.na(Total))) %>% 
+      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
+      data.frame()
+  })
+  
+  
+  
+  ######################################################################################
+  
+  
+  
+  ##################
+  ###### TABELA 4
+  
+  
+  #### Taxas de Desemprego, por Atributos Pessoais e Trabalho Anterior
+  
+  ### Sexo
+  tb4g1 <- reactive({ 
+    sample.ped() %>%
+      srvyr::filter(C050>=14) %>%
+      srvyr::filter(!(SIT %in% c(0,10))) %>%
+      
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%  
+      
+      srvyr::group_by(AAMM,sit,sexo) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=F),
+                     .fill="PIA"
+      ) %>% 
+      select(-n_se) %>% 
+      dplyr::ungroup() %>%
+      data.frame()})
+  
+  
+  tb4p1 <- reactive({ tb4g1() %>%   
+      dplyr::group_by(sit, sexo) %>%
+      dplyr::mutate(
+        media_tb4 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>%
+      filter(!(AAMM=="PIA")) %>%
+      filter(sexo!="PIA") %>%
+      data.frame()
+  })
+  
+  
+  ##
+  tb4f1 <- reactive({ tb4p1() %>%
+      select(-c(n)) %>%
+      tidyr::spread(sit, media_tb4) %>%
+      dplyr::mutate(
+        PEA = Desempregado+Ocupado,
+        tx.desemp = round(Desempregado/PEA*100,1)) %>%
+      select(AAMM,sexo,tx.desemp) %>%
+      tidyr::spread(sexo,tx.desemp) %>%
+      data.frame()
+  })
+  
+  
+  ### Raca/cor
+  tb4g2 <- reactive({
+    sample.ped() %>%
+      srvyr::filter(C050>=14) %>%
+      srvyr::filter(!(SIT %in% c(0,10))) %>%
+      
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%  
+      
+      srvyr::group_by(AAMM,sit,raca) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=F),
+                     .fill="PIA"
+      ) %>% 
+      select(-n_se) %>% 
+      data.frame()
+  })
+  
+  
+  ##
+  tb4f2 <- reactive({ tb4g2() %>%  
+      dplyr::group_by(sit, raca) %>%
+      dplyr::mutate(
+        media_tb4 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="PIA")) %>%
+      filter(raca!="PIA") %>% 
+      select(AAMM,raca,sit,n,media_tb4) %>% 
+      dplyr::ungroup() %>%
+      select(-c(n)) %>% 
+      tidyr::spread(sit, media_tb4) %>% 
+      dplyr::mutate(PEA = Desempregado+Ocupado,
+                    tx.desemp = round(Desempregado/PEA*100,1)) %>% 
+      select(AAMM,raca,tx.desemp) %>% 
+      tidyr::spread(raca,tx.desemp) %>% 
+      select(AAMM,negro,nao_negro) %>% 
+      data.frame()
+  })
+  
+  
+  
+  ## Posicao domicilio - chefe e nao chefe
+  tb4g3 <- reactive({
+    sample.ped() %>%
+      srvyr::filter(C050>=14) %>%
+      srvyr::filter(!(SIT %in% c(0,10))) %>%
+      
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%  
+      
+      srvyr::group_by(AAMM,sit,pos_dom) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=F),
+                     .fill="PIA"
+      ) %>% 
+      select(-n_se) %>% 
+      data.frame()
+  })
+  
+  
+  ##
+  tb4f3 <- reactive({ tb4g3() %>% 
+      dplyr::group_by(sit, pos_dom) %>%
+      dplyr::mutate(
+        media_tb4 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="PIA")) %>%
+      filter(pos_dom!="PIA") %>%
+      dplyr::ungroup() %>% 
+      select(-c(n)) %>% 
+      tidyr::spread(sit, media_tb4) %>% 
+      dplyr::mutate(
+        PEA = Desempregado+Ocupado,
+        tx.desemp = round(Desempregado/PEA*100,1)) %>% 
+      select(AAMM,pos_dom,tx.desemp) %>% 
+      tidyr::spread(pos_dom,tx.desemp) %>% 
+      data.frame()
+  })
+  
+  
+  
+  ### Faixa Etaria
+  tb4g4 <- reactive({
+    sample.ped() %>%
+      srvyr::filter(C050>=14) %>%
+      srvyr::filter(!(SIT %in% c(0,10))) %>%
+      
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%
+      
+      srvyr::group_by(AAMM,sit,fxetaria) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=F),
+                     .fill="PIA"
+      ) %>% 
+      select(-n_se) %>%
+      data.frame()
+  })
+  
+  tb4g4_fxet_14e15 <- reactive({ data.frame(AAMM="202004", sit="Ocupado", fxetaria="fxetaria_14a15anos", n=0)})
+  
+  tb4g4j <- reactive({ tb4g4() %>% 
+      full_join(tb4g4_fxet_14e15()) %>% 
+      arrange(AAMM,sit, fxetaria) %>%
+      data.frame()})
+  
+  
+  ##
+  tb4f4 <- reactive({ tb4g4j() %>% 
+      dplyr::group_by(sit, fxetaria) %>%
+      dplyr::mutate(
+        media_tb4 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="PIA")) %>%
+      filter(fxetaria!="PIA") %>% 
+      dplyr::ungroup() %>% 
+      select(-c(n)) %>% 
+      tidyr::spread(sit, media_tb4) %>% 
+      dplyr::mutate(
+        PEA = Desempregado+Ocupado,
+        tx.desemp = round(Desempregado/PEA*100,1)) %>%
+      select(AAMM,fxetaria,tx.desemp) %>%
+      tidyr::spread(fxetaria,tx.desemp) %>%
+      data.frame()
+  })
+  
+  
+  ### Trabalho Anterior
+  tb4g5 <- reactive({
+    sample.ped() %>%
+      srvyr::filter(C050>=14) %>%
+      srvyr::filter(!(SIT %in% c(0,10))) %>%
+      
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%
+      
+      srvyr::group_by(AAMM,sit,Desemp,experiencia) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=F),
+                     .fill="PIA"
+      ) %>% 
+      select(-n_se) %>% 
+      data.frame()
+  })
+  
+  
+  ##
+  tb4f5 <- reactive({ tb4g5() %>%  
+      dplyr::group_by(sit, experiencia) %>%
+      dplyr::mutate(
+        media_tb4 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="PIA")) %>%
+      filter(experiencia!="PIA") %>% 
+      select(-Desemp) %>%
+      dplyr::ungroup() %>% 
+      select(-c(n)) %>% 
+      tidyr::spread(sit, media_tb4) %>% 
+      dplyr::mutate(
+        PEA = Desempregado+Ocupado,
+        tx.desemp = round(Desempregado/PEA*100,1)) %>% 
+      select(AAMM,experiencia,tx.desemp) %>% 
+      tidyr::spread(experiencia,tx.desemp) %>% 
+      select(AAMM,sim,nao) %>% 
+      rename(trab_anterior_sim=sim,trab_anterior_nao=nao) %>% 
+      data.frame()
+  })
+  
+  
+  ### Taxa de desemprego total
+  tb4pt <- reactive({
+    tb4p1() %>% 
+      select(-c(n)) %>%   
+      dplyr::group_by(AAMM, sit) %>%
+      dplyr::summarise(media_tb4=sum(media_tb4,na.rm=T)) %>% 
+      tidyr::spread(sit, media_tb4) %>% 
+      dplyr::mutate(
+        PEA = Desempregado+Ocupado,
+        tx.desemp = round(Desempregado/PEA*100,1)) %>% 
+      select(AAMM, tx.desemp) %>% 
+      rename(Total=tx.desemp) %>% 
+      data.frame()})
+  
+  
+  
+  ### Tab4 Final
+  
+  tb4 <- reactive({ tb4pt() %>% 
+      left_join(tb4f1(), by=c("AAMM")) %>% 
+      left_join(tb4f2(), by=c("AAMM")) %>% 
+      left_join(tb4f3(), by=c("AAMM")) %>% 
+      left_join(tb4f4(), by=c("AAMM")) %>% 
+      left_join(tb4f5(), by=c("AAMM")) %>% 
+      
+      select(AAMM,Total,Homens,Mulheres,fxetaria_14a15anos,fxetaria_16a24anos,fxetaria_25a39anos,fxetaria_40a49anos,fxetaria_50a59anos,fxetaria_60anosemais,
+             chefe,demais_membros,negro,nao_negro,trab_anterior_sim,trab_anterior_nao) %>% 
+      filter(!(is.na(Total))) %>% 
+      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
+      data.frame()
+  })
+  
+  
+  
+  ######################################################################################
+  
+  
+  
+  ##################
+  ###### TABELA 5
+  
+  
+  #### Taxas de Participacao, por Atributos Pessoais
+  
+  
+  ### Sexo
+  tb5p1 <- reactive({ 
+    tb4g1() %>%
+      dplyr::group_by(sit, sexo) %>%
+      dplyr::mutate(
+        media_tb5 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="PIA")) %>%
+      filter(sexo!="PIA") %>%
+      data.frame()
+  })
+  
+  
+  ##
+  tb5f1 <- reactive({ tb5p1() %>% 
+      select(-c(n)) %>% 
+      tidyr::spread(sit, media_tb5) %>% 
+      dplyr::mutate(
+        PEA = Desempregado+Ocupado,
+        PIA = Desempregado+Ocupado+Inativo,
+        tx.partic = round(PEA/PIA*100,1)) %>% 
+      select(AAMM,sexo,tx.partic) %>% 
+      tidyr::spread(sexo,tx.partic) %>% 
+      data.frame()
+  })
+  
+  
+  
+  ### Raca/cor
+  tb5f2 <- reactive({ 
+    tb4g2() %>%
+      dplyr::group_by(sit, raca) %>%
+      dplyr::mutate(
+        media_tb5 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="PIA")) %>%
+      filter(raca!="PIA") %>% 
+      select(AAMM,raca,sit,n,media_tb5) %>% 
+      dplyr::ungroup() %>% 
+      select(-c(n)) %>% 
+      tidyr::spread(sit, media_tb5) %>% 
+      dplyr::mutate(
+        PEA = Desempregado+Ocupado,
+        PIA = Desempregado+Ocupado+Inativo,
+        tx.partic = round(PEA/PIA*100,1)) %>% 
+      select(AAMM,raca,tx.partic) %>% 
+      tidyr::spread(raca,tx.partic) %>% 
+      select(AAMM,negro,nao_negro) %>% 
+      data.frame()
+  })
+  
+  
+  
+  ### Posicao domicilio - chefe e nao chefe
+  tb5f3 <- reactive({ 
+    tb4g3() %>%
+      dplyr::group_by(sit, pos_dom) %>%
+      dplyr::mutate(
+        media_tb5 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="PIA")) %>%
+      filter(pos_dom!="PIA") %>% 
+      dplyr::ungroup() %>% 
+      select(-c(n)) %>% 
+      tidyr::spread(sit, media_tb5) %>% 
+      dplyr::mutate(
+        PEA = Desempregado+Ocupado,
+        PIA = Desempregado+Ocupado+Inativo,
+        tx.partic = round(PEA/PIA*100,1)) %>% 
+      select(AAMM,pos_dom,tx.partic) %>% 
+      tidyr::spread(pos_dom,tx.partic) %>% 
+      data.frame()
+  })
+  
+  
+  
+  ### Faixa Etaria
+  tb5f4 <- reactive({ 
+    tb4g4j() %>%
+      dplyr::group_by(sit, fxetaria) %>%
+      dplyr::mutate(
+        media_tb5 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="PIA")) %>%
+      filter(fxetaria!="PIA") %>% 
+      dplyr::ungroup() %>% 
+      select(-c(n)) %>% 
+      tidyr::spread(sit, media_tb5) %>% 
+      dplyr::mutate(
+        PEA = Desempregado+Ocupado,
+        PIA = Desempregado+Ocupado+Inativo,
+        tx.partic = round(PEA/PIA*100,1)) %>% 
+      select(AAMM,fxetaria,tx.partic) %>% 
+      tidyr::spread(fxetaria,tx.partic) %>% 
+      data.frame()
+  })
+  
+  
+  
+  ### Taxa de desemprego total
+  tb5pt <- reactive({
+    tb5p1() %>% 
+      select(-c(n)) %>%   
+      dplyr::group_by(AAMM, sit) %>%
+      dplyr::summarise(media_tb5=sum(media_tb5,na.rm=T)) %>% 
+      tidyr::spread(sit, media_tb5) %>% 
+      dplyr::mutate(
+        PEA = Desempregado+Ocupado,
+        PIA = Desempregado+Ocupado+Inativo,
+        tx.partic = round(PEA/PIA*100,1)) %>% 
+      select(AAMM, tx.partic) %>% 
+      rename(Total=tx.partic) %>% 
+      data.frame()})
+  
+  
+  
+  
+  ### Tab5 Final
+  tb5 <- reactive({ tb5pt() %>% 
+      left_join(tb5f1(), by=c("AAMM")) %>% 
+      left_join(tb5f2(), by=c("AAMM")) %>% 
+      left_join(tb5f3(), by=c("AAMM")) %>% 
+      left_join(tb5f4(), by=c("AAMM")) %>% 
+      
+      select(AAMM,Total,Homens,Mulheres,fxetaria_14a15anos,fxetaria_16a24anos,fxetaria_25a39anos,fxetaria_40a49anos,fxetaria_50a59anos,fxetaria_60anosemais,
+             chefe,demais_membros,negro,nao_negro) %>% 
+      filter(!(is.na(Total))) %>% 
+      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
+      data.frame()
+  })
+  
+  
+  
+  ######################################################################################
+  
+  
+  
+  ##################
+  ###### TABELA 6
+  
+  
+  #### Distribuicao dos Desempregados, por Atributos Pessoais e Trabalho Anterior
+  
+  ### Sexo
+  tb6p1 <- reactive({ 
+    tb4g1() %>%
+      dplyr::group_by(sit, sexo) %>%
+      dplyr::mutate(
+        media_tb6 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="PIA")) %>%
+      filter(sexo!="PIA") %>%
+      data.frame()
+  })
+  
+  
+  ##
+  tb6f1 <- reactive({ tb6p1() %>% 
+      select(-c(n)) %>% 
+      filter(sit=="Desempregado") %>% 
+      tidyr::spread(sexo, media_tb6) %>% 
+      dplyr::mutate(
+        total = Homens+Mulheres,
+        perc_Homens = round(Homens/total*100,1),
+        perc_Mulheres = round(Mulheres/total*100,1)) %>% 
+      select(AAMM,perc_Homens,perc_Mulheres) %>% 
+      data.frame()
+  })
+  
+  
+  
+  ### Raca/cor
+  tb6f2 <- reactive({ 
+    tb4g2() %>%
+      dplyr::group_by(sit, raca) %>%
+      dplyr::mutate(
+        media_tb6 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="PIA")) %>%
+      filter(raca!="PIA") %>% 
+      select(AAMM,raca,sit,n,media_tb6) %>% 
+      dplyr::ungroup() %>% 
+      select(-c(n)) %>% 
+      filter(sit=="Desempregado") %>% 
+      tidyr::spread(raca, media_tb6) %>% 
+      dplyr::mutate(
+        total = nao_negro+negro,
+        perc_nao_negro = round(nao_negro/total*100,1),
+        perc_negro = round(negro/total*100,1)) %>% 
+      select(AAMM,perc_nao_negro,perc_negro) %>% 
+      data.frame()
+  })
+  
+  
+  
+  ### Posicao domicilio - chefe e nao chefe
+  tb6f3 <- reactive({ 
+    tb4g3() %>%
+      dplyr::group_by(sit, pos_dom) %>%
+      dplyr::mutate(
+        media_tb6 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="PIA")) %>%
+      filter(pos_dom!="PIA") %>% 
+      dplyr::ungroup() %>% 
+      select(-c(n)) %>% 
+      filter(sit=="Desempregado") %>% 
+      tidyr::spread(pos_dom, media_tb6) %>% 
+      dplyr::mutate(
+        total = chefe+demais_membros,
+        perc_chefe = round(chefe/total*100,1),
+        perc_demais_membros = round(demais_membros/total*100,1)) %>% 
+      select(AAMM,perc_chefe,perc_demais_membros) %>% 
+      data.frame()
+  })
+  
+  
+  
+  ### Faixa Etaria
+  tb6f4 <- reactive({ 
+    tb4g4() %>%
+      dplyr::group_by(sit, fxetaria) %>%
+      dplyr::mutate(
+        media_tb6 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="PIA")) %>%
+      filter(fxetaria!="PIA") %>% 
+      dplyr::ungroup() %>% 
+      select(-c(n)) %>% 
+      filter(sit=="Desempregado") %>% 
+      tidyr::spread(fxetaria, media_tb6) %>% 
+      dplyr::mutate(
+        total = fxetaria_14a15anos+fxetaria_16a24anos+fxetaria_25a39anos+fxetaria_40a49anos+fxetaria_50a59anos+fxetaria_60anosemais,
+        perc_fxetaria_14a15anos = round(fxetaria_14a15anos/total*100,1),
+        perc_fxetaria_16a24anos = round(fxetaria_16a24anos/total*100,1),
+        perc_fxetaria_25a39anos = round(fxetaria_25a39anos/total*100,1),
+        perc_fxetaria_40a49anos = round(fxetaria_40a49anos/total*100,1),
+        perc_fxetaria_50a59anos = round(fxetaria_50a59anos/total*100,1),
+        perc_fxetaria_60anosemais = round(fxetaria_60anosemais/total*100,1)
+      ) %>% 
+      select(AAMM,perc_fxetaria_14a15anos,perc_fxetaria_16a24anos,perc_fxetaria_25a39anos,perc_fxetaria_40a49anos,perc_fxetaria_50a59anos,perc_fxetaria_60anosemais) %>% 
+      data.frame()
+  })
+  
+  
+  
+  ### Trabalho Anterior
+  tb6f5 <- reactive({ 
+    tb4g5() %>%
+      dplyr::group_by(sit, experiencia) %>%
+      dplyr::mutate(
+        media_tb6 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="PIA")) %>%
+      filter(experiencia!="PIA") %>% 
+      select(-Desemp) %>% 
+      dplyr::ungroup() %>% 
+      select(-c(n)) %>% 
+      filter(sit=="Desempregado") %>% 
+      tidyr::spread(experiencia, media_tb6) %>% 
+      dplyr::mutate(
+        total = sim+nao,
+        perc_trab_anterior_sim = round(sim/total*100,1),
+        perc_trab_anterior_nao = round(nao/total*100,1)) %>% 
+      select(AAMM,perc_trab_anterior_sim,perc_trab_anterior_nao) %>% 
+      data.frame()
+  })
+  
+  
+  
+  ### Taxa de desemprego total
+  tb6pt <- reactive({
+    tb6p1() %>% 
+      select(-c(n)) %>%   
+      filter(sit=="Desempregado") %>% 
+      tidyr::spread(sexo, media_tb6) %>% 
+      dplyr::mutate(
+        total = Homens+Mulheres,
+        perc_Total = round(total/total*100,1)) %>% 
+      select(AAMM,perc_Total) %>% 
+      data.frame()})
+  
+  
+  
+  ### Tab6 Final
+  
+  tb6 <- reactive({ tb6pt() %>% 
+      left_join(tb6f1(), by=c("AAMM")) %>% 
+      left_join(tb6f2(), by=c("AAMM")) %>% 
+      left_join(tb6f3(), by=c("AAMM")) %>% 
+      left_join(tb6f4(), by=c("AAMM")) %>% 
+      left_join(tb6f5(), by=c("AAMM")) %>% 
+      
+      select(AAMM,perc_Total,perc_Homens,perc_Mulheres,perc_fxetaria_14a15anos,perc_fxetaria_16a24anos,perc_fxetaria_25a39anos,perc_fxetaria_40a49anos,perc_fxetaria_50a59anos,perc_fxetaria_60anosemais,
+             perc_chefe,perc_demais_membros,perc_negro,perc_nao_negro,perc_trab_anterior_sim,perc_trab_anterior_nao) %>% 
+      filter(!(is.na(perc_Total))) %>% 
+      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
+      data.frame()
+  })
+  
+  
+  
+  ######################################################################################
+  
+  
+  
+  ##################
+  ###### TABELA 7
+  
+  
+  #### Distribuicao da Populacao Economicamente Ativa, por Atributos Pessoais e Trabalho Anterior
+  
+  ### Sexo
+  tb7p1 <- reactive({ 
+    tb4g1() %>%
+      filter(sit %in% c("Desempregado","Ocupado")) %>% 
+      dplyr::group_by(AAMM,sexo) %>%
+      dplyr::summarise(n=sum(n,na.rm=TRUE)) %>% 
+      dplyr::ungroup() %>%
+      dplyr::group_by(sexo) %>%
+      dplyr::mutate(
+        media_tb7 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="PIA")) %>%
+      filter(sexo!="PIA") %>%
+      data.frame()
+  })
+  
+  
+  ##
+  tb7f1 <- reactive({ tb7p1() %>% 
+      select(-c(n)) %>% 
+      tidyr::spread(sexo, media_tb7) %>% 
+      dplyr::mutate(
+        total = Homens+Mulheres,
+        perc_Homens = round(Homens/total*100,1),
+        perc_Mulheres = round(Mulheres/total*100,1)) %>% 
+      select(AAMM,perc_Homens,perc_Mulheres) %>% 
+      data.frame()
+  })
+  
+  
+  
+  ### Raca/cor
+  tb7f2 <- reactive({ 
+    tb4g2() %>%
+      filter(sit %in% c("Desempregado","Ocupado")) %>% 
+      dplyr::group_by(AAMM,raca) %>%
+      dplyr::summarise(n=sum(n,na.rm=TRUE)) %>% 
+      dplyr::ungroup() %>%
+      dplyr::group_by(raca) %>%
+      dplyr::mutate(
+        media_tb7 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="PIA")) %>%
+      filter(raca!="PIA") %>% 
+      select(AAMM,raca,n,media_tb7) %>% 
+      dplyr::ungroup() %>% 
+      select(-c(n)) %>% 
+      tidyr::spread(raca, media_tb7) %>% 
+      dplyr::mutate(
+        total = nao_negro+negro,
+        perc_nao_negro = round(nao_negro/total*100,1),
+        perc_negro = round(negro/total*100,1)) %>% 
+      select(AAMM,perc_nao_negro,perc_negro) %>% 
+      data.frame()
+  })
+  
+  
+  
+  ### Posicao domicilio - chefe e nao chefe
+  tb7f3 <- reactive({ 
+    tb4g3() %>%
+      filter(sit %in% c("Desempregado","Ocupado")) %>% 
+      dplyr::group_by(AAMM,pos_dom) %>%
+      dplyr::summarise(n=sum(n,na.rm=TRUE)) %>% 
+      dplyr::ungroup() %>%
+      dplyr::group_by(pos_dom) %>%
+      dplyr::mutate(
+        media_tb7 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="PIA")) %>%
+      filter(pos_dom!="PIA") %>% 
+      dplyr::ungroup() %>%  
+      select(-c(n)) %>% 
+      tidyr::spread(pos_dom, media_tb7) %>% 
+      dplyr::mutate(
+        total = chefe+demais_membros,
+        perc_chefe = round(chefe/total*100,1),
+        perc_demais_membros = round(demais_membros/total*100,1)) %>% 
+      select(AAMM,perc_chefe,perc_demais_membros) %>% 
+      data.frame()})
+  
+  
+  
+  ### Faixa Etaria
+  tb7f4 <- reactive({ 
+    tb4g4() %>%
+      filter(sit %in% c("Desempregado","Ocupado")) %>% 
+      dplyr::group_by(AAMM,fxetaria) %>%
+      dplyr::summarise(n=sum(n,na.rm=TRUE)) %>% 
+      dplyr::ungroup() %>%
+      dplyr::group_by(fxetaria) %>%
+      dplyr::mutate(
+        media_tb7 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="PIA")) %>%
+      filter(fxetaria!="PIA") %>% 
+      dplyr::ungroup() %>%  
+      select(-c(n)) %>% 
+      tidyr::spread(fxetaria, media_tb7) %>% 
+      dplyr::mutate(
+        total = fxetaria_14a15anos+fxetaria_16a24anos+fxetaria_25a39anos+fxetaria_40a49anos+fxetaria_50a59anos+fxetaria_60anosemais,
+        perc_fxetaria_14a15anos = round(fxetaria_14a15anos/total*100,1),
+        perc_fxetaria_16a24anos = round(fxetaria_16a24anos/total*100,1),
+        perc_fxetaria_25a39anos = round(fxetaria_25a39anos/total*100,1),
+        perc_fxetaria_40a49anos = round(fxetaria_40a49anos/total*100,1),
+        perc_fxetaria_50a59anos = round(fxetaria_50a59anos/total*100,1),
+        perc_fxetaria_60anosemais = round(fxetaria_60anosemais/total*100,1)
+      ) %>% 
+      select(AAMM,perc_fxetaria_14a15anos,perc_fxetaria_16a24anos,perc_fxetaria_25a39anos,perc_fxetaria_40a49anos,perc_fxetaria_50a59anos,perc_fxetaria_60anosemais) %>% 
+      data.frame()
+  })
+  
+  
+  
+  ### Trabalho Anterior
+  tb7f5 <- reactive({ 
+    tb4g5() %>%
+      filter(sit %in% c("Desempregado","Ocupado")) %>% 
+      dplyr::group_by(AAMM,experiencia) %>%
+      dplyr::summarise(n=sum(n,na.rm=TRUE)) %>% 
+      dplyr::ungroup() %>%
+      dplyr::group_by(experiencia) %>%
+      dplyr::mutate(
+        media_tb7 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="PIA")) %>%
+      filter(experiencia!="PIA") %>% 
+      dplyr::ungroup() %>%  
+      select(-c(n)) %>% 
+      tidyr::spread(experiencia, media_tb7) %>% 
+      dplyr::mutate(
+        total = sim+nao,
+        perc_trab_anterior_sim = round(sim/total*100,1),
+        perc_trab_anterior_nao = round(nao/total*100,1)) %>% 
+      select(AAMM,perc_trab_anterior_sim,perc_trab_anterior_nao) %>% 
+      data.frame()
+  })
+  
+  
+  
+  ### Taxa de desemprego total
+  tb7pt <- reactive({
+    tb7p1() %>% 
+      select(-c(n)) %>%
+      tidyr::spread(sexo, media_tb7) %>% 
+      dplyr::mutate(
+        total = Homens+Mulheres,
+        perc_Total = round(total/total*100,1)) %>% 
+      select(AAMM,perc_Total) %>% 
+      data.frame()})
+  
+  
+  
+  ### Tab7 Final
+  
+  tb7 <- reactive({ tb7pt() %>% 
+      left_join(tb7f1(), by=c("AAMM")) %>% 
+      left_join(tb7f2(), by=c("AAMM")) %>% 
+      left_join(tb7f3(), by=c("AAMM")) %>% 
+      left_join(tb7f4(), by=c("AAMM")) %>% 
+      left_join(tb7f5(), by=c("AAMM")) %>% 
+      
+      select(AAMM,perc_Total,perc_Homens,perc_Mulheres,perc_fxetaria_14a15anos,perc_fxetaria_16a24anos,perc_fxetaria_25a39anos,perc_fxetaria_40a49anos,perc_fxetaria_50a59anos,perc_fxetaria_60anosemais,
+             perc_chefe,perc_demais_membros,perc_negro,perc_nao_negro,perc_trab_anterior_sim,perc_trab_anterior_nao) %>% 
+      filter(!(is.na(perc_Total))) %>% 
+      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
+      data.frame()
+  })
+  
+  
+  
+  ######################################################################################
+  
+  
+  
+  ##################
+  ###### TABELA 8
+  
+  
+  #### Estimativas e Indices do Nivel de Ocupacao, por Setor de Atividade
+  
+  ### Nivel de Ocupacao por Setor de Atividade - Sem dividir o Servicos
+  tb8p1 <- reactive({
+    sample.ped() %>%
+      srvyr::filter(SIT==4) %>% 
+      srvyr::filter(C050>=14) %>%
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%
+      
+      srvyr::group_by(AAMM,setor) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=T),
+                     .fill="total"
+      ) %>%
+      select(-n_se) %>%
+      filter(AAMM!="total") %>%
+      dplyr::ungroup() %>%
+      dplyr::group_by(setor) %>%
+      dplyr::mutate(
+        media_tb8_1 = round(rollmean(x = n, 3, align = "right", fill = NA)/1000)) %>%
+      select(-n) %>%
+      filter(!is.na(media_tb8_1)) %>%
+      filter(setor!="outros") %>%
+      tidyr::spread(setor, media_tb8_1) %>%
+      
+      dplyr::mutate(
+        ind_total = 100*(total/1253),
+        ind_indtrans = 100*(industria/43),
+        ind_constr = 100*(construcao/83),
+        ind_comerc = 100*(comercio/226),
+        ind_servicos = 100*(servico/881)) %>%
+      
+      select(AAMM, total, ind_total, industria, ind_indtrans, construcao, ind_constr, comercio, ind_comerc, servico, ind_servicos) %>% 
+      data.frame()
+  })
+  
+  
+  
+  ### Servico - Adm Publica
+  tb8p2 <- reactive({
+    sample.ped() %>%
+      srvyr::filter(SIT==4) %>% 
+      srvyr::filter(C050>=14) %>%
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%
+      
+      srvyr::group_by(AAMM,setorm) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=T),
+                     .fill="total"
+      ) %>%
+      select(-n_se) %>%
+      filter(AAMM!="total") %>%
+      dplyr::ungroup() %>%
+      dplyr::group_by(setorm) %>%
+      dplyr::mutate(
+        media_tb8_2 = round(rollmean(x = n, 3, align = "right", fill = NA)/1000)) %>%
+      select(-n) %>%
+      filter(!is.na(media_tb8_2)) %>%
+      filter(!(setorm %in% c("outros","NA","total"))) %>%
+      tidyr::spread(setorm, media_tb8_2) %>%
+      
+      dplyr::mutate(
+        ind_admpub = 100*(admpub_defesa_segursocial/212)) %>%
+      
+      data.frame()
+  })
+  
+  
+  
+  ### Tab8 Final
+  
+  tb8 <- reactive({ tb8p1() %>% 
+      left_join(tb8p2(), by=c("AAMM")) %>% 
+      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
+      data.frame()
+  })
+  
+  
+  
+  ######################################################################################
+  
+  
+  
+  ##################
+  ###### TABELA 9
+  
+  
+  #### Distribuicao dos Ocupados, por Setor de Atividade
+  
+  ## Comercio, Construcao, Industria, Servico e Total
+  tb9_p1 <- reactive({ 
+    sample.ped() %>%
+      srvyr::filter(SIT==4) %>% 
+      srvyr::filter(C050>=14) %>%
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%
+      srvyr::group_by(AAMM,setor) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=T),
+                     .fill="total"
+      ) %>%
+      select(-n_se) %>%
+      filter(AAMM!="total") %>%
+      dplyr::ungroup() %>%
+      
+      dplyr::group_by(setor) %>%
+      dplyr::mutate(
+        media_tb9_1 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>%
+      select(-n) %>%
+      filter(!is.na(media_tb9_1)) %>%
+      filter(setor!="outros") %>%
+      tidyr::spread(setor, media_tb9_1) %>%
+      data.frame()
+  })
+  
+  
+  
+  ## Administracao Publica, defesa e seguridade social
+  tb9_p2 <- reactive({ 
+    sample.ped() %>%
+      srvyr::filter(SIT==4) %>% 
+      srvyr::filter(C050>=14) %>%
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%
+      srvyr::group_by(AAMM,setorm) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=T),
+                     .fill="total"
+      ) %>%
+      select(-n_se) %>%
+      filter(AAMM!="total") %>%
+      dplyr::ungroup() %>%
+      
+      dplyr::group_by(setorm) %>%
+      dplyr::mutate(
+        media_tb9_2 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>%
+      select(-n) %>%
+      filter(!is.na(media_tb9_2)) %>%
+      filter(!(setorm %in% c("outros",NA,"total"))) %>%
+      tidyr::spread(setorm, media_tb9_2) %>%
+      data.frame()
+  })
+  
+  
+  
+  ### Tab9 Final
+  
+  tb9j <- reactive({ tb9_p1() %>% 
+      left_join(tb9_p2(), by=c("AAMM")) %>% 
+      select(AAMM, total, industria, construcao, comercio, servico, admpub_defesa_segursocial) %>%
+      data.frame()
+  })
+  
+  
+  ##
+  tb9 <- reactive({ tb9j() %>%
+      dplyr::mutate(
+        perc_total = 100.0,
+        perc_indtrans = round(100*(industria/total),1),
+        perc_constr = round(100*(construcao/total),1),
+        perc_comerc = round(100*(comercio/total),1),
+        perc_servicos = round(100*(servico/total),1),
+        perc_admpub = round(100*(admpub_defesa_segursocial/total),1)
+      ) %>%
+      select(AAMM, perc_total, perc_indtrans, perc_constr, perc_comerc, perc_servicos, perc_admpub) %>% 
+      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
+      data.frame()
+  })
+  
+  
+  
+  ######################################################################################
+  
+  
+  
+  ##################
+  ###### TABELA 10
+  
+  
+  #### Indices do Nivel de Ocupacao, por Ramo de Atividade
+  tb10_p1 <- reactive({
+    sample.ped() %>%
+      srvyr::filter(SIT==4) %>% 
+      srvyr::filter(C050>=14) %>%
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%
+      
+      srvyr::group_by(AAMM,cnae) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=T),
+                     .fill="total"
+      ) %>%
+      select(-n_se) %>%
+      filter(AAMM!="total") %>%
+      dplyr::ungroup() %>%
+      
+      dplyr::group_by(cnae) %>%
+      dplyr::mutate(
+        media_tb10_1 = round(rollmean(x = n, 3, align = "right", fill = NA)/1000)) %>%
+      select(-n) %>%
+      filter(!is.na(media_tb10_1)) %>%
+      tidyr::spread(cnae, media_tb10_1) %>%
+      
+      dplyr::mutate(
+        ind_transporte_armaz_cor = 100*(transporte_armaz_cor/43),
+        ind_inform_comunicacao = 100*(inform_comunicacao/124),
+        ind_ativ_adm_serv_comp = 100*(ativ_adm_serv_comp/102),
+        ind_adm_publica_defesa  = 100*(adm_publica_defesa/388),
+        ind_alojam_alimentacao = 100*(alojam_alimentacao/132),
+        ind_serv_domestico = 100*(serv_domestico/81)) %>%
+      data.frame()
+  })
+  
+  
+  
+  ##
+  tb10_p2 <- reactive({
+    sample.ped() %>%
+      srvyr::filter(SIT==4) %>% 
+      srvyr::filter(C050>=14) %>%
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%
+      
+      srvyr::group_by(AAMM,RAMO_CNAEm3) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=T),
+                     .fill="total"
+      ) %>%
+      select(-n_se) %>%
+      filter(AAMM!="total") %>%
+      dplyr::ungroup() %>%
+      
+      dplyr::group_by(RAMO_CNAEm3) %>%
+      dplyr::mutate(
+        media_tb10_2 = round(rollmean(x = n, 3, align = "right", fill = NA)/1000)) %>%
+      select(-n) %>%
+      filter(!is.na(media_tb10_2)) %>%
+      filter(RAMO_CNAEm3!="demais_ocupados") %>%
+      tidyr::spread(RAMO_CNAEm3, media_tb10_2) %>%
+      
+      dplyr::mutate(
+        ind_educacao = 100*(educacao/103),
+        ind_saude = 100*(saude/73)) %>%
+      
+      select(AAMM, educacao, ind_educacao, saude, ind_saude) %>%  
+      data.frame()
+  })
+  
+  
+  
+  ### Tab10 Final
+  
+  tb10 <- reactive({ tb8() %>% 
+      
+      left_join(tb10_p1(), by=c("AAMM")) %>% 
+      left_join(tb10_p2(), by=c("AAMM")) %>% 
+      
+      select(AAMM, ind_total, ind_indtrans, ind_constr, ind_comerc, ind_servicos, ind_transporte_armaz_cor, ind_inform_comunicacao, ind_ativ_adm_serv_comp, ind_adm_publica_defesa, 
+             ind_admpub, ind_educacao, ind_saude, ind_alojam_alimentacao, ind_serv_domestico) %>% 
+      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
+      data.frame()
+    
+  })
+  
+  
+  ######################################################################################
+  
+  
+  
+  ##################
+  ###### TABELA 11
+  
+  
+  #### Estimativas e Indices do Nivel de Ocupacao, por Posicao na Ocupacao
+  tb11_p1 <- reactive({
+    sample.ped() %>%
+      srvyr::filter(SIT==4) %>% 
+      srvyr::filter(C050>=14) %>%
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%
+      
+      srvyr::group_by(AAMM,pos_ocup1) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=T),
+                     .fill="total"
+      ) %>%
+      select(-n_se) %>%
+      filter(AAMM!="total") %>%
+      dplyr::ungroup() %>%
+      
+      dplyr::group_by(pos_ocup1) %>%
+      dplyr::mutate(
+        media_tb11_1 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>%
+      select(-n) %>%
+      filter(!is.na(media_tb11_1)) %>%
+      dplyr::ungroup() %>%
+      
+      dplyr::mutate(media_tb11_1=round(media_tb11_1)) %>%
+      tidyr::spread(pos_ocup1, media_tb11_1) %>%
+      data.frame()
+  })
+  
+  
+  ##
+  tb11_p2 <- reactive({
+    sample.ped() %>%
+      srvyr::filter(SIT==4) %>% 
+      srvyr::filter(C050>=14) %>%
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%
+      
+      srvyr::group_by(AAMM,pos_ocup2) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=T),
+                     .fill="ocupado"
+      ) %>%
+      select(-n_se) %>%
+      filter(AAMM!="ocupado") %>%
+      dplyr::ungroup() %>%
+      
+      dplyr::group_by(pos_ocup2) %>%
+      dplyr::mutate(
+        media_tb11_2 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>%
+      select(-n) %>%
+      filter(!is.na(media_tb11_2)) %>%
+      dplyr::ungroup() %>%
+      
+      dplyr::mutate(media_tb11_2=round(media_tb11_2)) %>% 
+      tidyr::spread(pos_ocup2, media_tb11_2) %>%
+      data.frame()
+  })
+  
+  
+  ##
+  tb11_p3 <- reactive({
+    sample.ped() %>%
+      srvyr::filter(SIT==4) %>% 
+      srvyr::filter(C050>=14) %>%
+      srvyr::mutate(pos_ocup1=as.character(pos_ocup1),
+                    pos_ocup_setor_priv=case_when(pos_ocup1=="ass_priv_c_cart"~"assalariado_setor_priv",
+                                                  pos_ocup1=="ass_priv_s_cart"~"assalariado_setor_priv",
+                                                  TRUE~pos_ocup1)) %>% 
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%
+      
+      srvyr::group_by(AAMM,pos_ocup_setor_priv) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=T),
+                     .fill="total"
+      ) %>%
+      select(-n_se) %>%
+      filter(AAMM!="total") %>%
+      dplyr::ungroup() %>%
+      
+      dplyr::group_by(pos_ocup_setor_priv) %>%
+      dplyr::mutate(
+        media_tb11_3 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>%
+      select(-n) %>%
+      filter(!is.na(media_tb11_3)) %>%
+      dplyr::ungroup() %>%
+      
+      dplyr::mutate(media_tb11_3=round(media_tb11_3)) %>%
+      tidyr::spread(pos_ocup_setor_priv, media_tb11_3) %>%
+      select(AAMM, assalariado_setor_priv) %>%
+      data.frame()
+  })
+  
+  
+  
+  ### Tab11 Final
+  
+  tb11 <- reactive({ tb11_p1() %>% 
+      left_join(tb11_p2(), by=c("AAMM")) %>% 
+      left_join(tb11_p3(), by=c("AAMM")) %>% 
+      
+      dplyr::rename(setor_privado=assalariado_setor_priv) %>% 
+      dplyr::mutate(ind_ocup = 100*(ocupado/1253),
+                    ind_assal_tot = 100*(assalariado/927),
+                    ind_assal_priv = 100*(setor_privado/623),
+                    ind_assal_priv_c_cart = 100*(ass_priv_c_cart/527),
+                    ind_assal_priv_s_cart = 100*(ass_priv_s_cart/97),
+                    ind_assal_publ = 100*(ass_pub/304),
+                    ind_autonomos = 100*(autonomo/144),
+                    ind_emp_dom = 100*(empreg_domestico/81)) %>% 
+      
+      select(AAMM, ocupado, ind_ocup, assalariado, ind_assal_tot, setor_privado, ind_assal_priv, ass_priv_c_cart, ind_assal_priv_c_cart, 
+             ass_priv_s_cart, ind_assal_priv_s_cart, ass_pub, ind_assal_publ, autonomo, ind_autonomos, empreg_domestico, ind_emp_dom) %>% 
+      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
+      
+      data.frame()
+  })
+  
+  
+  
+  ######################################################################################
+  
+  
+  
+  ##################
+  ###### TABELA 12
+  
+  
+  #### Distribuicao dos Ocupados, por Posicao na Ocupacao
+  tb11_p1m <- reactive({
+    sample.ped() %>%
+      srvyr::filter(SIT==4) %>% 
+      srvyr::filter(C050>=14) %>%
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%
+      
+      srvyr::group_by(AAMM,pos_ocup1) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=T),
+                     .fill="total"
+      ) %>%
+      select(-n_se) %>%
+      filter(AAMM!="total") %>%
+      dplyr::ungroup() %>%
+      
+      dplyr::group_by(pos_ocup1) %>%
+      dplyr::mutate(
+        media_tb11_1 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>%
+      select(-n) %>%
+      filter(!is.na(media_tb11_1)) %>%
+      dplyr::ungroup() %>%
+      
+      tidyr::spread(pos_ocup1, media_tb11_1) %>%
+      
+      data.frame()})
+  
+  
+  
+  ##
+  tb11_p2m <- reactive({
+    sample.ped() %>%
+      srvyr::filter(SIT==4) %>% 
+      srvyr::filter(C050>=14) %>%
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%
+      
+      srvyr::group_by(AAMM,pos_ocup2) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=T),
+                     .fill="ocupado"
+      ) %>%
+      select(-n_se) %>%
+      filter(AAMM!="ocupado") %>%
+      dplyr::ungroup() %>%
+      
+      dplyr::group_by(pos_ocup2) %>%
+      dplyr::mutate(
+        media_tb11_2 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>%
+      select(-n) %>%
+      filter(!is.na(media_tb11_2)) %>%
+      dplyr::ungroup() %>%
+      
+      tidyr::spread(pos_ocup2, media_tb11_2) %>%
+      data.frame()})
+  
+  
+  
+  ### Tab12 Final
+  
+  tb11m <- reactive({ tb11_p1m() %>% 
+      left_join(tb11_p2m(), by=c("AAMM")) %>% 
+      mutate(setor_privado=(ass_priv_c_cart+ass_priv_s_cart)) %>% 
+      data.frame()})
+  
+  
+  ##
+  tb12 <- reactive({ tb11m() %>% 
+      dplyr::mutate(perc_ocupado=100.0,
+                    perc_assalariado = round(assalariado/ocupado*100,1),
+                    perc_setor_privado = round(setor_privado/ocupado*100,1),
+                    perc_ass_priv_c_cart = round(ass_priv_c_cart/ocupado*100,1),
+                    perc_ass_priv_s_cart = round(ass_priv_s_cart/ocupado*100,1),
+                    perc_ass_pub = round(ass_pub/ocupado*100,1),
+                    perc_autonomo = round(autonomo/ocupado*100,1),
+                    perc_empreg_domestico = round(empreg_domestico/ocupado*100,1)) %>% 
+      
+      select(AAMM,perc_ocupado, perc_assalariado, perc_setor_privado, perc_ass_priv_c_cart, perc_ass_priv_s_cart, perc_ass_pub, 
+             perc_autonomo, perc_empreg_domestico) %>% 
+      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
+      
+      data.frame()
+  })
+  
+  
+  
+  ######################################################################################
+  
+  
+  
+  ##################
+  ###### TABELA 13
+  
+  
+  #### Distribuicao dos Ocupados, por Atributos Pessoais e Trabalho Anterior
+  
+  ### Sexo
+  tb13g1 <- reactive({ 
+    sample.ped() %>%
+      srvyr::filter(SIT==4) %>% 
+      srvyr::filter(C050>=14) %>%
+      
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%  
+      
+      srvyr::group_by(AAMM,sexo) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=F),
+                     .fill="total"
+      ) %>% 
+      select(-n_se) %>%
+      filter(AAMM!="total") %>%
+      dplyr::ungroup() %>%
+      
+      dplyr::group_by(sexo) %>%
+      dplyr::mutate(
+        media_tb13 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="total")) %>%
+      filter(!is.na(sexo)) %>%
+      select(-c(n)) %>% 
+      tidyr::spread(sexo, media_tb13) %>% 
+      dplyr::mutate(perc_hom=round(100*Homens/total,1),
+                    perc_mul=round(100*Mulheres/total,1)) %>% 
+      data.frame()
+  })
+  
+  
+  
+  ### Raca/cor
+  tb13g2 <- reactive({
+    sample.ped() %>%
+      srvyr::filter(SIT==4) %>% 
+      srvyr::filter(C050>=14) %>%
+      
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%  
+      
+      filter(!is.na(raca)) %>%
+      srvyr::group_by(AAMM,raca) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=F),
+                     .fill="total"
+      ) %>% 
+      select(-n_se) %>%
+      filter(AAMM!="total") %>%
+      dplyr::ungroup() %>%
+      
+      dplyr::group_by(raca) %>%
+      dplyr::mutate(
+        media_tb13 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="total")) %>%
+      select(-c(n)) %>% 
+      tidyr::spread(raca, media_tb13) %>%
+      dplyr::mutate(perc_negro=round(100*negro/total,1),
+                    perc_nao_negro=round(100*nao_negro/total,1)) %>%
+      data.frame()
+  })
+  
+  
+  
+  ## Posicao domicilio - chefe e nao chefe
+  tb13g3 <- reactive({
+    sample.ped() %>%
+      srvyr::filter(SIT==4) %>% 
+      srvyr::filter(C050>=14) %>%
+      
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%  
+      
+      srvyr::group_by(AAMM,pos_dom) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=F),
+                     .fill="total"
+      ) %>%
+      select(-n_se) %>%
+      filter(AAMM!="total") %>%
+      dplyr::ungroup() %>%
+      
+      dplyr::group_by(pos_dom) %>%
+      dplyr::mutate(
+        media_tb13 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="total")) %>%
+      filter(!is.na(pos_dom)) %>%
+      select(-c(n)) %>% 
+      tidyr::spread(pos_dom, media_tb13) %>%
+      dplyr::mutate(perc_chefe=round(100*chefe/total,1),
+                    perc_demais_membros=round(100*demais_membros/total,1)) %>%
+      data.frame()
+  })
+  
+  
+  
+  ### Faixa Etaria
+  tb13g4g <- reactive({
+    sample.ped() %>%
+      srvyr::filter(SIT==4) %>% 
+      srvyr::filter(C050>=14) %>%
+      
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%
+      
+      srvyr::group_by(AAMM,fxetaria) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=F),
+                     .fill="total"
+      ) %>% 
+      select(-n_se) %>%
+      filter(AAMM!="total") %>%
+      dplyr::ungroup() %>%
+      data.frame()})
+  
+  
+  tb13g4_fxet_14e15 <- reactive({ data.frame(AAMM="202004", fxetaria="fxetaria_14a15anos", n=0)})
+  tb13g4gj <- reactive({ tb13g4g() %>% 
+      full_join(tb13g4_fxet_14e15()) %>% 
+      arrange(AAMM, fxetaria) %>% 
+      data.frame()})
+  
+  
+  tb13g4 <- reactive({ tb13g4gj() %>% 
+      dplyr::group_by(fxetaria) %>%
+      dplyr::mutate(
+        media_tb13 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="total")) %>%
+      filter(!is.na(fxetaria)) %>%
+      select(-c(n)) %>% 
+      tidyr::spread(fxetaria, media_tb13) %>%
+      dplyr::mutate(
+        perc_fxetaria_14a15anos = round(fxetaria_14a15anos/total*100,1),
+        perc_fxetaria_16a24anos = round(fxetaria_16a24anos/total*100,1),
+        perc_fxetaria_25a39anos = round(fxetaria_25a39anos/total*100,1),
+        perc_fxetaria_40a49anos = round(fxetaria_40a49anos/total*100,1),
+        perc_fxetaria_50a59anos = round(fxetaria_50a59anos/total*100,1),
+        perc_fxetaria_60anosemais = round(fxetaria_60anosemais/total*100,1)) %>% 
+      data.frame()
+  })
+  
+  
+  
+  ### Trabalho Anterior
+  tb13g5 <- reactive({
+    sample.ped() %>%
+      srvyr::filter(SIT==4) %>% 
+      srvyr::filter(C050>=14) %>%
+      
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%
+      
+      srvyr::group_by(AAMM,experiencia) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=F),
+                     .fill="total"
+      ) %>% 
+      select(-n_se) %>%
+      filter(AAMM!="total") %>%
+      dplyr::ungroup() %>%
+      
+      dplyr::group_by(experiencia) %>%
+      dplyr::mutate(
+        media_tb13 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="total")) %>%
+      filter(!is.na(experiencia)) %>%
+      select(-c(n)) %>% 
+      tidyr::spread(experiencia, media_tb13) %>%
+      dplyr::mutate(perc_sim=round(100*sim/total,1),
+                    perc_nao=round(100*nao/total,1)) %>%
+      
+      data.frame()
+  })
+  
+  
+  
+  ### Tab13 Final
+  
+  tb13 <- reactive({ tb13g1() %>% 
+      left_join(tb13g2(), by=c("AAMM")) %>% 
+      left_join(tb13g3(), by=c("AAMM")) %>% 
+      left_join(tb13g4(), by=c("AAMM")) %>% 
+      left_join(tb13g5(), by=c("AAMM")) %>% 
+      
+      filter(!is.na(perc_hom)) %>%
+      dplyr::mutate(perc_total=100.0) %>% 
+      select(AAMM, perc_total, perc_hom, perc_mul, perc_fxetaria_14a15anos, perc_fxetaria_16a24anos, perc_fxetaria_25a39anos, 
+             perc_fxetaria_40a49anos, perc_fxetaria_50a59anos, perc_fxetaria_60anosemais,
+             perc_chefe, perc_demais_membros, perc_negro, perc_nao_negro, perc_sim, perc_nao) %>%
+      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
+      
+      data.frame()
+  })
+  
+  
+  
+  ######################################################################################
+  
+  
+  
+  ##################
+  ###### TABELA 19 
+  
+  #### Distribuicao da Populacao Inativa de 14 Anos e Mais, por Atributos Pessoais e Trabalho Anterior
+  
+  ### Sexo
+  tb19g1 <- reactive({ 
+    sample.ped() %>%
+      srvyr::filter(SIT %in% c(5,6)) %>% 
+      srvyr::filter(C050>=14) %>%
+      
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%  
+      
+      srvyr::group_by(AAMM,sexo) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=F),
+                     .fill="total"
+      ) %>% 
+      select(-n_se) %>%
+      filter(AAMM!="total") %>%
+      dplyr::ungroup() %>%
+      
+      dplyr::group_by(sexo) %>%
+      dplyr::mutate(
+        media_tb19 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="total")) %>%
+      filter(!is.na(sexo)) %>%
+      select(-c(n)) %>% 
+      tidyr::spread(sexo, media_tb19) %>% 
+      dplyr::mutate(perc_hom=round(100*Homens/total,1),
+                    perc_mul=round(100*Mulheres/total,1)) %>% 
+      data.frame()
+  })
+  
+  
+  ### Raca/cor
+  tb19g2 <- reactive({
+    sample.ped() %>%
+      srvyr::filter(SIT %in% c(5,6)) %>% 
+      srvyr::filter(C050>=14) %>%
+      
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%  
+      
+      filter(!is.na(raca)) %>%
+      srvyr::group_by(AAMM,raca) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=F),
+                     .fill="total"
+      ) %>% 
+      select(-n_se) %>%
+      filter(AAMM!="total") %>%
+      dplyr::ungroup() %>%
+      
+      dplyr::group_by(raca) %>%
+      dplyr::mutate(
+        media_tb19 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="total")) %>%
+      select(-c(n)) %>% 
+      tidyr::spread(raca, media_tb19) %>%
+      dplyr::mutate(perc_negro=round(100*negro/total,1),
+                    perc_nao_negro=round(100*nao_negro/total,1)) %>%
+      data.frame()
+  })
+  
+  
+  
+  ## Posicao domicilio - chefe e nao chefe
+  tb19g3 <- reactive({
+    sample.ped() %>%
+      srvyr::filter(SIT %in% c(5,6)) %>% 
+      srvyr::filter(C050>=14) %>%
+      
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%  
+      
+      srvyr::group_by(AAMM,pos_dom) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=F),
+                     .fill="total"
+      ) %>%
+      select(-n_se) %>%
+      filter(AAMM!="total") %>%
+      dplyr::ungroup() %>%
+      
+      dplyr::group_by(pos_dom) %>%
+      dplyr::mutate(
+        media_tb19 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="total")) %>%
+      filter(!is.na(pos_dom)) %>%
+      select(-c(n)) %>% 
+      tidyr::spread(pos_dom, media_tb19) %>%
+      dplyr::mutate(perc_chefe=round(100*chefe/total,1),
+                    perc_demais_membros=round(100*demais_membros/total,1)) %>%
+      data.frame()
+  })
+  
+  
+  
+  ### Faixa Etaria
+  tb19g4 <- reactive({
+    sample.ped() %>%
+      srvyr::filter(SIT %in% c(5,6)) %>% 
+      srvyr::filter(C050>=14) %>%
+      
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%
+      
+      srvyr::group_by(AAMM,fxetaria) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=F),
+                     .fill="total"
+      ) %>% 
+      select(-n_se) %>%
+      filter(AAMM!="total") %>%
+      dplyr::ungroup() %>%
+      
+      dplyr::group_by(fxetaria) %>%
+      dplyr::mutate(
+        media_tb19 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="total")) %>%
+      filter(!is.na(n)) %>%
+      select(-c(n)) %>% 
+      tidyr::spread(fxetaria, media_tb19) %>%
+      dplyr::mutate(
+        perc_fxetaria_14a15anos = round(fxetaria_14a15anos/total*100,1),
+        perc_fxetaria_16a24anos = round(fxetaria_16a24anos/total*100,1),
+        perc_fxetaria_25a39anos = round(fxetaria_25a39anos/total*100,1),
+        perc_fxetaria_40a49anos = round(fxetaria_40a49anos/total*100,1),
+        perc_fxetaria_50a59anos = round(fxetaria_50a59anos/total*100,1),
+        perc_fxetaria_60anosemais = round(fxetaria_60anosemais/total*100,1)) %>% 
+      data.frame()})
+  
+  
+  
+  ### Trabalho Anterior
+  tb19g5 <- reactive({
+    sample.ped() %>%
+      srvyr::filter(SIT %in% c(5,6)) %>% 
+      srvyr::filter(C050>=14) %>%
+      
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%
+      
+      srvyr::group_by(AAMM,experiencia) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=F),
+                     .fill="total"
+      ) %>% 
+      select(-n_se) %>%
+      filter(AAMM!="total") %>%
+      dplyr::ungroup() %>%
+      
+      dplyr::group_by(experiencia) %>%
+      dplyr::mutate(
+        media_tb19 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="total")) %>%
+      filter(!is.na(experiencia)) %>%
+      select(-c(n)) %>% 
+      tidyr::spread(experiencia, media_tb19) %>%
+      dplyr::mutate(perc_sim=round(100*sim/total,1),
+                    perc_nao=round(100*nao/total,1)) %>%
+      
+      data.frame()
+  })
+  
+  
+  
+  ### Tab19 Final
+  
+  tb19 <- reactive({ tb19g1() %>% 
+      left_join(tb19g2(), by=c("AAMM")) %>% 
+      left_join(tb19g3(), by=c("AAMM")) %>% 
+      left_join(tb19g4(), by=c("AAMM")) %>% 
+      left_join(tb19g5(), by=c("AAMM")) %>% 
+      
+      filter(!is.na(perc_hom)) %>%
+      
+      dplyr::mutate(perc_total=100.0) %>% 
+      select(AAMM, perc_total, perc_hom, perc_mul, perc_fxetaria_14a15anos, perc_fxetaria_16a24anos, perc_fxetaria_25a39anos, 
+             perc_fxetaria_40a49anos, perc_fxetaria_50a59anos, perc_fxetaria_60anosemais,
+             perc_chefe, perc_demais_membros, perc_negro, perc_nao_negro, perc_sim, perc_nao) %>%
+      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
+      
+      data.frame()
+  })
+  
+  
+  
+  ######################################################################################
+  
+  
+  
+  ##################
+  ###### TABELA 20 
+  
+  
+  #### Distribuicao da Populacao Inativa de 14 Anos e Mais, com Experiencia Anterior de Trabalho, por Faixa de Tempo em que Perdeu ou Deixou o ultimo Trabalho
+  tb20 <- reactive({ 
+    sample.ped() %>%
+      srvyr::filter(SIT %in% c(5,6)) %>% 
+      srvyr::filter(C050>=14) %>%
+      
+      srvyr::mutate(count=1,
+                    AAMM=as.character(AAMM)) %>%  
+      
+      srvyr::filter(tperd_inat_nome!="Missing") %>% 
+      srvyr::group_by(AAMM,tperd_inat_nome) %>%
+      
+      srvyr::cascade(n=survey_total(count,na.rm=F),
+                     .fill="total"
+      ) %>% 
+      select(-n_se) %>%
+      filter(AAMM!="total") %>%
+      dplyr::ungroup() %>%
+      
+      dplyr::group_by(tperd_inat_nome) %>%
+      dplyr::mutate(
+        media_tb20 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="total")) %>%
+      filter(!is.na(media_tb20)) %>%
+      select(-c(n)) %>% 
+      tidyr::spread(tperd_inat_nome, media_tb20) %>% 
+      dplyr::mutate(perc_total=100.0,
+                    perc_ate6meses=round(Ate6meses/total*100,1),
+                    perc_maisde6mesesa1ano=round(Maisde6mesesa1ano/total*100,1),
+                    perc_maisde1a2anos=round(Maisde1a2anos/total*100,1),
+                    perc_maisde2a3anos=round(Maisde2a3anos/total*100,1),
+                    perc_maisde3a5anos=round(Maisde3a5anos/total*100,1),
+                    perc_maisde5anos=round(Maisde5anos/total*100,1)) %>% 
+      select(AAMM,perc_total:perc_maisde5anos) %>% 
+      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
+      data.frame()
+  })
+  
+  
+  
+  ######################################################################################
+  
+  
+  
+  ##################
+  ###### TABELA 21 
+  
+  
+  #### Distribuicao da Populacao Inativa de 14 Anos e Mais,  por Principal Condicao de Atividade 
+  tb21 <- reactive({ 
+    sample.ped() %>%
+      srvyr::filter(SIT %in% c(5,6)) %>% 
+      srvyr::filter(C050>=14) %>%
+      
+      srvyr::mutate(count=1,
+                    AAMM=as.character(AAMM)) %>%  
+      
+      srvyr::filter(cond_ativg!=100) %>% 
+      srvyr::group_by(AAMM,cond_ativ) %>%
+      
+      srvyr::cascade(n=survey_total(count,na.rm=F),
+                     .fill="total"
+      ) %>% 
+      select(-n_se) %>%
+      filter(AAMM!="total") %>%
+      dplyr::ungroup() %>%
+      
+      dplyr::group_by(cond_ativ) %>%
+      dplyr::mutate(
+        media_tb21 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="total")) %>%
+      filter(!is.na(media_tb21)) %>%
+      select(-c(n)) %>% 
+      tidyr::spread(cond_ativ, media_tb21) %>% 
+      dplyr::mutate(perc_total=100.0,
+                    perc_aposent=round(Aposentado/total*100,1),
+                    perc_estud=round(Estudante/total*100,1),
+                    perc_dedi_afazerdomest=round(Dedicadoafazeresdomesticos/total*100,1),
+                    perc_lic_saude=round(Licenciadoporsaude/total*100,1),
+                    perc_outros=round(Outros/total*100,1)) %>% 
+      select(AAMM,perc_total:perc_outros) %>% 
+      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
+      data.frame()
+  })
+  
+  
+  
+  ######################################################################################
+  
+  
+  
+  ##################
+  ###### TAB TEXTO DO ANEXO
+  
+  
+  #### Taxa de Desemprego Total, por Grupos de Regioes Administrativas
+  tb_texto_p1 <- reactive({
+    sample.ped() %>%
+      srvyr::filter(C050>=14) %>%
+      srvyr::filter(!(SIT %in% c(0,10))) %>%
+      
+      srvyr::mutate(
+        count=1,
+        AAMM=as.character(AAMM)) %>%
+      srvyr::group_by(AAMM,sit,grupo) %>%
+      srvyr::cascade(n=survey_total(count,na.rm=F),
+                     .fill="PIA"
+      ) %>% 
+      select(-n_se) %>% 
+      dplyr::ungroup() %>%
+      dplyr::group_by(sit, grupo) %>%
+      dplyr::mutate(
+        media_tbtexto = rollmean(x = n, 6, align = "right", fill = NA)/1000) %>% 
+      filter(!(AAMM=="PIA")) %>%
+      filter(grupo!="PIA") %>% 
+      filter(!(is.na(media_tbtexto))) %>%
+      select(-n) %>%
+      
+      dplyr::ungroup() %>%
+      data.frame()
+  })
+  
+  
+  ## Fazer taxa de desemprego total
+  tb_texto_p2 <- reactive({
+    tb_texto_p1() %>% 
+      dplyr::group_by(AAMM, sit) %>%
+      dplyr::summarise(media_tbtexto=sum(media_tbtexto,na.rm=T)) %>% 
+      tidyr::spread(sit, media_tbtexto) %>%
+      dplyr::mutate(
+        PEA = Desempregado+Ocupado,
+        tx.desemp = Desempregado/PEA*100) %>%
+      select(AAMM, tx.desemp) %>%
+      rename(Total=tx.desemp) %>%
+      data.frame()
+  })
+  
+  
+  
+  ### Tab texto Final
+  
+  tb_texto <- reactive({ 
+    tb_texto_p1() %>% 
+      tidyr::spread(sit, media_tbtexto) %>%
+      dplyr::mutate(
+        PEA = Desempregado+Ocupado,
+        tx.desemp = round(Desempregado/PEA*100,1)) %>% 
+      select(AAMM, grupo, tx.desemp) %>% 
+      
+      tidyr::spread(grupo, tx.desemp) %>% 
+      
+      left_join(tb_texto_p2(), by=c("AAMM")) %>% 
+      dplyr::mutate(Total=round(Total,1)) %>% 
+      
+      select(AAMM, Total, Grupo_1, Grupo_2, Grupo_3, Grupo_4) %>% 
+      filter(!(is.na(Total))) %>%  
+      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>%
+      data.frame()
+  })
+  
+  
   ######################################################################################
   
   
@@ -2255,7 +2256,7 @@ tb_texto <- reactive({
   output$PIA <- renderValueBox({
     valueBox(
       {tb1()$PIA[tb1()$AAMM == input$select_mes]}, "PIA",color = "blue"
-  )})
+    )})
   
   output$Ind_PIA <- renderValueBox({
     valueBox(
@@ -2729,47 +2730,47 @@ tb_texto <- reactive({
   # Tabela 8
   output$Est_Nv_Ocup_Total <- renderValueBox({
     valueBox(
-      round(tb8()$total[tb8()$AAMM == input$select_mes],1), "Estimativa do Nível de Ocupação Total Por Setor de Atividade",color = "blue"
+      round(tb8()$total[tb8()$AAMM == input$select_mes],0), "Estimativa do Nível de Ocupação Total Por Setor de Atividade",color = "blue"
     )
   })
   output$Ind_Nv_Ocup_Total <- renderValueBox({
     valueBox(
-      round(tb8()$ind_total[tb8()$AAMM == input$select_mes],2), "Índice do Nível de Ocupação Total",color = "blue"
+      round(tb8()$ind_total[tb8()$AAMM == input$select_mes],1), "Índice do Nível de Ocupação Total",color = "blue"
     )
   })
   output$Est_Nv_Ocup_Industria <- renderValueBox({
     valueBox(
-      round(tb8()$industria[tb8()$AAMM == input$select_mes],1), "Estimativa do Nível de Ocupação Indústria de Transformação",color = "blue"
+      round(tb8()$industria[tb8()$AAMM == input$select_mes],0), "Estimativa do Nível de Ocupação Indústria de Transformação",color = "blue"
     )
   })
   output$Ind_Nv_Ocup_Industria <- renderValueBox({
     valueBox(
-      round(tb8()$ind_indtrans[tb8()$AAMM == input$select_mes],2), "Índice do Nível de Ocupação Indústria de Transformação",color = "blue"
+      round(tb8()$ind_indtrans[tb8()$AAMM == input$select_mes],1), "Índice do Nível de Ocupação Indústria de Transformação",color = "blue"
     )
   })
   output$Est_Nv_Ocup_Construcao <- renderValueBox({
     valueBox(
-      round(tb8()$construcao[tb8()$AAMM == input$select_mes],1), "Estimativa do Nível de Ocupação Construção",color = "blue"
+      round(tb8()$construcao[tb8()$AAMM == input$select_mes],0), "Estimativa do Nível de Ocupação Construção",color = "blue"
     )
   })
   output$Ind_Nv_Ocup_Construcao <- renderValueBox({
     valueBox(
-      round(tb8()$ind_constr[tb8()$AAMM == input$select_mes],2), "Índice do Nível de Ocupação Construção",color = "blue"
+      round(tb8()$ind_constr[tb8()$AAMM == input$select_mes],1), "Índice do Nível de Ocupação Construção",color = "blue"
     )
   })
   output$Est_Nv_Ocup_Comercio <- renderValueBox({
     valueBox(
-      round(tb8()$comercio[tb8()$AAMM == input$select_mes],1), "Estimativa do Nível de Ocupação Comércio; Reparação de Veículos Automotores e Motocicletas",color = "blue"
+      round(tb8()$comercio[tb8()$AAMM == input$select_mes],0), "Estimativa do Nível de Ocupação Comércio; Reparação de Veículos Automotores e Motocicletas",color = "blue"
     )
   })
   output$Ind_Nv_Ocup_Comercio <- renderValueBox({
     valueBox(
-      round(tb8()$ind_comerc[tb8()$AAMM == input$select_mes],2), "Índice do Nível de Ocupação Comércio; Reparação de Veículos Automotores e Motocicletas",color = "blue"
+      round(tb8()$ind_comerc[tb8()$AAMM == input$select_mes],1), "Índice do Nível de Ocupação Comércio; Reparação de Veículos Automotores e Motocicletas",color = "blue"
     )
   })
   output$Est_Nv_Ocup_Servico <- renderValueBox({
     valueBox(
-      round(tb8()$servico[tb8()$AAMM == input$select_mes],1), "Estimativa do Nível de Ocupação Serviço",color = "blue"
+      round(tb8()$servico[tb8()$AAMM == input$select_mes],0), "Estimativa do Nível de Ocupação Serviço",color = "blue"
     )
   })
   output$Ind_Nv_Ocup_Servico <- renderValueBox({
@@ -2779,7 +2780,7 @@ tb_texto <- reactive({
   })
   output$Est_Nv_Ocup_admpub <- renderValueBox({
     valueBox(
-      round(tb8()$admpub_defesa_segursocial[tb8()$AAMM == input$select_mes],1), "Estimativa do Nível de Ocupação Adm. Pública, defesa e seguridade social",color = "blue"
+      round(tb8()$admpub_defesa_segursocial[tb8()$AAMM == input$select_mes],0), "Estimativa do Nível de Ocupação Adm. Pública, defesa e seguridade social",color = "blue"
     )
   })
   output$Ind_Nv_Ocup_admpub <- renderValueBox({
@@ -2904,7 +2905,7 @@ tb_texto <- reactive({
   # Tabela 11
   output$Est_Nv_Ocup_Total_2 <- renderValueBox({
     valueBox(
-      round(tb11()$ocupado[tb11()$AAMM == input$select_mes],1), "Estimativa do Nível de Ocupação, Por Posição na Ocupação",color = "blue"
+      round(tb11()$ocupado[tb11()$AAMM == input$select_mes],0), "Estimativa do Nível de Ocupação, Por Posição na Ocupação",color = "blue"
     )
   })
   output$Ind_Nv_Ocup_Total_3 <- renderValueBox({
@@ -2914,7 +2915,7 @@ tb_texto <- reactive({
   })
   output$Est_Nv_Ocup_Assalariados_Total <- renderValueBox({
     valueBox(
-      round(tb11()$assalariado[tb11()$AAMM == input$select_mes],1), "Estimativa do Nível de Ocupação Assalariados",color = "blue"
+      round(tb11()$assalariado[tb11()$AAMM == input$select_mes],0), "Estimativa do Nível de Ocupação Assalariados",color = "blue"
     )
   })
   output$Ind_Nv_Ocup_Assalariados_Total <- renderValueBox({
@@ -2924,7 +2925,7 @@ tb_texto <- reactive({
   })
   output$Est_Nv_Ocup_Ass_Setor_Privado <- renderValueBox({
     valueBox(
-      round(tb11()$setor_privado[tb11()$AAMM == input$select_mes],1), "Estimativa do Nível de Ocupação Assalariados Setor Privado",color = "blue"
+      round(tb11()$setor_privado[tb11()$AAMM == input$select_mes],0), "Estimativa do Nível de Ocupação Assalariados Setor Privado",color = "blue"
     )
   })
   output$Ind_Nv_Ocup_Ass_Setor_Privado <- renderValueBox({
@@ -2934,7 +2935,7 @@ tb_texto <- reactive({
   })
   output$Est_Nv_Ocup_Ass_Privado_C_Carteira <- renderValueBox({
     valueBox(
-      round(tb11()$ass_priv_c_cart[tb11()$AAMM == input$select_mes],1), "Estimativa do Nível de Ocupação Assalariados Setor Privado Com Carteira Assinada",color = "blue"
+      round(tb11()$ass_priv_c_cart[tb11()$AAMM == input$select_mes],0), "Estimativa do Nível de Ocupação Assalariados Setor Privado Com Carteira Assinada",color = "blue"
     )
   })
   output$Ind_Nv_Ocup_Ass_Privado_C_Carteira <- renderValueBox({
@@ -2944,7 +2945,7 @@ tb_texto <- reactive({
   })
   output$Est_Nv_Ocup_Ass_Privado_S_Carteira <- renderValueBox({
     valueBox(
-      round(tb11()$ass_priv_s_cart[tb11()$AAMM == input$select_mes],1), "Estimativa do Nível de Ocupação Assalariados Setor Privado Sem Carteira Assinada",color = "blue"
+      round(tb11()$ass_priv_s_cart[tb11()$AAMM == input$select_mes],0), "Estimativa do Nível de Ocupação Assalariados Setor Privado Sem Carteira Assinada",color = "blue"
     )
   })
   output$Ind_Nv_Ocup_Ass_Privado_S_Carteira <- renderValueBox({
@@ -2954,7 +2955,7 @@ tb_texto <- reactive({
   })
   output$Est_Nv_Ocup_Ass_Publico <- renderValueBox({
     valueBox(
-      round(tb11()$ass_pub[tb11()$AAMM == input$select_mes],1), "Estimativa do Nível de Ocupação Assalariados Setor Público",color = "blue"
+      round(tb11()$ass_pub[tb11()$AAMM == input$select_mes],0), "Estimativa do Nível de Ocupação Assalariados Setor Público",color = "blue"
     )
   })
   output$Ind_Nv_Ocup_Ass_Publico <- renderValueBox({
@@ -2964,7 +2965,7 @@ tb_texto <- reactive({
   })
   output$Est_Nv_Ocup_Autonomo <- renderValueBox({
     valueBox(
-      round(tb11()$autonomo[tb11()$AAMM == input$select_mes],1), "Estimativa do Nível de Ocupação Autônomos",color = "blue"
+      round(tb11()$autonomo[tb11()$AAMM == input$select_mes],0), "Estimativa do Nível de Ocupação Autônomos",color = "blue"
     )
   })
   output$Ind_Nv_Ocup_Autonomo <- renderValueBox({
@@ -2974,7 +2975,7 @@ tb_texto <- reactive({
   })
   output$Est_Nv_Ocup_Empregado_Domestico <- renderValueBox({
     valueBox(
-      round(tb11()$empreg_domestico[tb11()$AAMM == input$select_mes],1), "Estimativa do Nível de Ocupação Empregados Domésticos",color = "blue"
+      round(tb11()$empreg_domestico[tb11()$AAMM == input$select_mes],0), "Estimativa do Nível de Ocupação Empregados Domésticos",color = "blue"
     )
   })
   output$Ind_Nv_Ocup_Empregado_Domestico <- renderValueBox({
@@ -3113,8 +3114,7 @@ tb_texto <- reactive({
   })
   # Tabela 14
   output$serie_temporal_tb14 <- renderPlotly({
-    plot <- plot.serie(tb14(), "mes_ano", input$select_indicador_tb14,"Ano-Mês",input$select_indicador_tb14)
-    ggplotly(plot)
+
   })
   # Tabela 15
   output$scatter_15 <- renderPlotly({
@@ -3285,6 +3285,36 @@ tb_texto <- reactive({
   })
   output$serie_temporal_tb21 <- renderPlotly({
     plot <- plot.serie(tb21(), "mes_ano", input$select_indicador_tb21,"Ano-Mês",as.character(input$select_indicador_tb21))
+    ggplotly(plot)
+  })
+  # Tabela Texto
+  output$Tx_Desemp_Total_3 <- renderValueBox({
+    valueBox(
+      round(tb_texto()$Total[tb_texto()$AAMM == input$select_mes],1), "Taxa de Desemprego Total, por grupos de regiões administrativas",color = "blue"
+    )
+  })
+  output$Grupo_1_2 <- renderValueBox({
+    valueBox(
+      round(tb_texto()$Grupo_1[tb_texto()$AAMM == input$select_mes],1), "Grupo 1",color = "blue"
+    )
+  })
+  output$Grupo_2_2 <- renderValueBox({
+    valueBox(
+      round(tb_texto()$Grupo_2[tb_texto()$AAMM == input$select_mes],1), "Grupo 2",color = "blue"
+    )
+  })
+  output$Grupo_3_2 <- renderValueBox({
+    valueBox(
+      round(tb_texto()$Grupo_3[tb_texto()$AAMM == input$select_mes],1), "Grupo 3",color = "blue"
+    )
+  })
+  output$Grupo_4_2 <- renderValueBox({
+    valueBox(
+      round(tb_texto()$Grupo_4[tb_texto()$AAMM == input$select_mes],1), "Grupo 4",color = "blue"
+    )
+  })
+  output$serie_temporal_tbtexto <- renderPlotly({
+    plot <- plot.serie(tb_texto(), "mes_ano", input$select_indicador_tbtexto,"Ano-Mês",input$select_indicador_tbtexto)
     ggplotly(plot)
   })
 }
