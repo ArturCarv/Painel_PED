@@ -72,3 +72,5 @@ n_tb19 <- c("perc_total","perc_hom","perc_mul","perc_fxetaria_14a15anos","perc_f
 n_tb20 <- c("perc_total","perc_ate6meses","perc_maisde6mesesa1ano",
             "perc_maisde1a2anos","perc_maisde2a3anos","perc_maisde3a5anos","perc_maisde5anos")
 n_tb21 <- c("perc_total","perc_aposent","perc_estud","perc_dedi_afazerdomest","perc_lic_saude","perc_outros")
+
+n_tbtexto <- c("Total", "Grupo_1", "Grupo_2", "Grupo_3", "Grupo_4")
