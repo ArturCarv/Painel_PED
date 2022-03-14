@@ -8,8 +8,8 @@ ui <- dashboardPage(
   dashboardSidebar(
     sidebarMenu(
       selectInput(inputId = "select_mes", label = "Ano e Mês", 
-                           choices = meses[1:(length(meses)-1)], 
-                           selected = meses[length(meses)-1]),
+                  choices = meses[1:(length(meses)-1)], 
+                  selected = meses[length(meses)-1]),
       menuItem("Tabela 1", tabName = "tab1", icon = icon("table")),
       menuItem("Tabela 2", tabName = "tab2", icon = icon("table")),
       menuItem("Tabela 3", tabName = "tab3", icon = icon("table")),
@@ -30,9 +30,10 @@ ui <- dashboardPage(
       menuItem("Tabela 18", tabName = "tab18", icon = icon("table")),
       menuItem("Tabela 19", tabName = "tab19", icon = icon("table")),
       menuItem("Tabela 20", tabName = "tab20", icon = icon("table")),
-      menuItem("Tabela 21", tabName = "tab21", icon = icon("table"))
-      )
-    ),
+      menuItem("Tabela 21", tabName = "tab21", icon = icon("table")),
+      menuItem("Tabela Texto", tabName = "tab_texto", icon = icon("table"))
+    )
+  ),
   
   # Tabela 1
   dashboardBody(
@@ -221,19 +222,19 @@ ui <- dashboardPage(
               selectInput(inputId = "select_indicador_tb8", label = "Indicador", 
                           choices = n_tb8, 
                           selected = n_tb8[1])),
-        valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Total"),
-        valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Total"),
-        valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Industria"),
-        valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Industria"),
-        valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Construcao"),
-        valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Construcao"),
-        valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Comercio"),
-        valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Comercio"),
-        valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Servico"),
-        valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Servico"),
-        valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_admpub"),
-        valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_admpub")
-      ),
+          valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Total"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Total"),
+          valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Industria"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Industria"),
+          valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Construcao"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Construcao"),
+          valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Comercio"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Comercio"),
+          valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Servico"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Servico"),
+          valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_admpub"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_admpub")
+        ),
         fluidRow(
           column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb8"))
         )
@@ -246,13 +247,13 @@ ui <- dashboardPage(
               selectInput(inputId = "select_indicador_tb9", label = "Indicador", 
                           choices = n_tb9, 
                           selected = n_tb9[1])),
-        valueBoxOutput(width = 2, outputId = "Dist_Ocup_Total"),
-        valueBoxOutput(width = 2, outputId = "Dist_Ocup_Industria"),
-        valueBoxOutput(width = 2, outputId = "Dist_Ocup_Construcao"),
-        valueBoxOutput(width = 2, outputId = "Dist_Ocup_Comercio"),
-        valueBoxOutput(width = 2, outputId = "Dist_Ocup_Servico"),
-        valueBoxOutput(width = 2, outputId = "Dist_Ocup_admpub")
-      ),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Total"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Industria"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Construcao"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Comercio"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Servico"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_admpub")
+        ),
         fluidRow(
           column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb9"))
         )
@@ -307,7 +308,7 @@ ui <- dashboardPage(
           valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Autonomo"),
           valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Empregado_Domestico"),
           valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Empregado_Domestico")
-      ),
+        ),
         fluidRow(
           column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb11"))
         )
@@ -468,7 +469,28 @@ ui <- dashboardPage(
         fluidRow(
           column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb21"))
         )
+      ),
+      # Tabela texto
+      tabItem(
+        tabName = "tab_texto",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_indicador_tbtexto", label = "Indicador", 
+                          choices = n_tbtexto, 
+                          selected = n_tbtexto[1])),
+          
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_Total_3"),
+          valueBoxOutput(width = 2, outputId = "Grupo_1_2"),
+          valueBoxOutput(width = 2, outputId = "Grupo_2_2"),
+          valueBoxOutput(width = 2, outputId = "Grupo_3_2"),
+          valueBoxOutput(width = 2, outputId = "Grupo_4_2")
+        ),
+        fluidRow(
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tbtexto"))
+        )
       )
+      
     )
   )
 )
+
