@@ -1,3322 +1,495 @@
 
-
-server <- function(input, output){
+ui <- dashboardPage(
   
+  # Título
+  dashboardHeader(title = "Painel PED"),
   
-  sample.ped <- reactive({  
-    mes <- input$select_mes
-    
-    if(202101 <= input$select_mes & input$select_mes <= 202112){
-      arq1 <- read_sav("W:/PED/PED 2020/Programas/DEZ 2020/PED-DF 2020.SAV") %>% rename(SIT=sit, FATOR=fator2, AAMM=ANO_MES) %>% data.frame()
-      arq2 <- read_sav(paste0("W:/PED/PED 2021/Processamento/",input$select_mes,"/PED-DF 2021.SAV")) %>% rename(SIT=sit, FATOR=fator2, AAMM=ANO_MES) %>% data.frame()
-    }else{
-      arq1 <- read_sav(paste0("W:/PED/PED 2021/Processamento/202112/PED-DF 2021.SAV")) %>% rename(SIT=sit, FATOR=fator2, AAMM=ANO_MES) %>% data.frame()
-      arq2 <- read_sav(paste0("W:/PED/PED 2022/PROCESSAMENTO/",input$select_mes,"/PED-DF 2022.SAV")) %>% rename(SIT=sit, FATOR=fator2, AAMM=ANO_MES) %>% data.frame()    
-    }
-    
-    common_cols <- intersect(colnames(arq1), colnames(arq2))
-    
-    bd_ped <- rbind(
-      subset(arq1, select = common_cols),
-      subset(arq2, select = common_cols)
+  # Menu
+  dashboardSidebar(
+    sidebarMenu(
+      selectInput(inputId = "select_mes", label = "Ano e Mês", 
+                  choices = meses[1:(length(meses)-1)], 
+                  selected = meses[length(meses)-1]),
+      menuItem("Tabela 1", tabName = "tab1", icon = icon("table")),
+      menuItem("Tabela 2", tabName = "tab2", icon = icon("table")),
+      menuItem("Tabela 3", tabName = "tab3", icon = icon("table")),
+      menuItem("Tabela 4", tabName = "tab4", icon = icon("table")),
+      menuItem("Tabela 5", tabName = "tab5", icon = icon("table")),
+      menuItem("Tabela 6", tabName = "tab6", icon = icon("table")),
+      menuItem("Tabela 7", tabName = "tab7", icon = icon("table")),
+      menuItem("Tabela 8", tabName = "tab8", icon = icon("table")),
+      menuItem("Tabela 9", tabName = "tab9", icon = icon("table")),
+      menuItem("Tabela 10", tabName = "tab10", icon = icon("table")),
+      menuItem("Tabela 11", tabName = "tab11", icon = icon("table")),
+      menuItem("Tabela 12", tabName = "tab12", icon = icon("table")),
+      menuItem("Tabela 13", tabName = "tab13", icon = icon("table")),
+      menuItem("Tabela 14", tabName = "tab14", icon = icon("table")),
+      menuItem("Tabela 15", tabName = "tab15", icon = icon("table")),
+      menuItem("Tabela 16", tabName = "tab16", icon = icon("table")),
+      menuItem("Tabela 17", tabName = "tab17", icon = icon("table")),
+      menuItem("Tabela 18", tabName = "tab18", icon = icon("table")),
+      menuItem("Tabela 19", tabName = "tab19", icon = icon("table")),
+      menuItem("Tabela 20", tabName = "tab20", icon = icon("table")),
+      menuItem("Tabela 21", tabName = "tab21", icon = icon("table")),
+      menuItem("Tabela Texto", tabName = "tab_texto", icon = icon("table"))
     )
-    
-    
-    
-    ped <- bd_ped %>%
-      
-      # rename(
-      #        FATOR=fator2,
-      #        AAMM=ANO_MES,
-      #        SIT = sit) %>%
-      
-      dplyr::mutate(
-        CONGLOM=as.numeric(conglom)
-        # CONGLOM=as.numeric(CONGLOM)
-      ) %>% 
-      
-      dplyr::mutate(sit=factor(case_when(SIT %in% c(1,2,3) ~ "Desempregado",
-                                         SIT == 4 ~"Ocupado",
-                                         SIT %in% c(5,6) ~ "Inativo"))) %>% 
-      
-      dplyr::mutate(sit2=factor(case_when(SIT == 1 ~ "Desemp_Oculto_Precario",
-                                          SIT == 2 ~ "Desemp_Aberto",
-                                          SIT == 3 ~ "Desemp_Oculto_Desalento"))) %>% 
-      
-      dplyr::mutate(sit3=factor(case_when(SIT == 1 ~ "Desemp_Oculto_Precario",
-                                          SIT == 3 ~ "Desemp_Oculto_Desalento"))) %>% 
-      
-      dplyr::mutate(fxetaria=case_when(C050>=0 & C050<=13 ~ "fxetaria_0a13anos",
-                                       C050>=14 & C050<=15 ~ "fxetaria_14a15anos",
-                                       C050>=16 & C050<=24 ~ "fxetaria_16a24anos",
-                                       C050>=25 & C050<=39 ~ "fxetaria_25a39anos",
-                                       C050>=40 & C050<=49 ~ "fxetaria_40a49anos",
-                                       C050>=50 & C050<=59 ~ "fxetaria_50a59anos",
-                                       C050>=60 & C050<=120 ~ "fxetaria_60anosemais",
-                                       TRUE ~ "nao_informado")) %>% 
-      
-      
-      dplyr::mutate(grupo=factor(case_when(GRUPO == 1 ~ "Grupo_1",
-                                           GRUPO == 2 ~ "Grupo_2",
-                                           GRUPO == 3 ~ "Grupo_3",
-                                           GRUPO == 4 ~ "Grupo_4"))) %>%  
-      
-      dplyr::mutate(sexo=case_when(C030==1~"Homens",
-                                   C030==2~"Mulheres",
-                                   C030==11~"Nao_inf")) %>% 
-      
-      dplyr::mutate(raca=case_when(((C040>=2)&(C040<=3))~'negro',
-                                   ((C040==1)|(C040==4)|(C040==5))~'nao_negro')) %>% 
-      
-      dplyr::mutate(pos_dom=case_when((C061==1)~'chefe',
-                                      (C061!=1)~'demais_membros')) %>% 
-      
-      dplyr::mutate(PIA = case_when((SIT>0 & SIT<7)~'1', SIT==0~'0',SIT>6~'0'),
-                    
-                    PAR = case_when((SIT==1 | SIT==2 | SIT==3| SIT==4)~'1',(SIT>=5 & SIT<=6)~'0'), # 1 - pea; 0 - inativos
-                    
-                    Desem = case_when(SIT >= 1 & SIT <= 3 ~ "1",                                   # 1 - desempregados; 2 - ocupados
-                                      SIT == 4 ~ "2"),
-                    
-                    Desem1 = case_when(SIT == 1 | SIT == 3 ~ "1",                                  # 1 - oculto; 2 - aberto; 3 - ocupados
-                                       SIT == 2 ~"2",
-                                       SIT == 4 ~"3"),
-                    
-                    trab_ant_ocup = case_when(SIT == 4 & F560 != 1 ~ "0",                          # 0 -  Nao; 1 - sim
-                                              SIT == 4 & F560 == 1 ~ "1"),
-                    
-                    trab_ant_inat580 = case_when(PAR == 0 & F580 != 1 ~ "0",
-                                                 PAR == 0 & F580 == 1 ~ "1"),
-                    
-                    trab_ant_inat591 = case_when(PAR == 0 & F591 == 100 ~ "0",
-                                                 PAR == 0 & F591 != 100 ~ "1"),
-                    
-                    trab_ant_inat = ifelse(trab_ant_inat580 == "1" | trab_ant_inat591 == "1", "1",
-                                           ifelse(trab_ant_inat580 == "0" | trab_ant_inat591 == "0", "0", "999")),
-                    
-                    trab_ant_des611 = case_when(Desem ==1 & F611 == 100 ~ "0",
-                                                Desem ==1 & F611 != 100 ~ "1"),
-                    
-                    trab_ant_des641 = case_when(Desem ==1 & F641 == 100 ~ "0",
-                                                Desem ==1 & F641 != 100 ~ "1"),
-                    
-                    trab_ant_des = ifelse(trab_ant_des611 == "1" | trab_ant_des641 == 1 , "1",
-                                          ifelse(trab_ant_des611 == "0" | trab_ant_des641 == "0" , "0","999")),
-                    
-                    trab_ant = case_when(PIA == 1 & trab_ant_ocup == 1 | PIA == 1 & trab_ant_inat == 1 | PIA == 1 & trab_ant_des == 1 ~ "1",
-                                         PIA == 1 & trab_ant_ocup != 1 | PIA == 1 & trab_ant_inat != 1 | PIA == 1 & trab_ant_des != 1 ~ "0")) %>% 
-      
-      dplyr::mutate(Desemp = case_when(Desem==1 ~ "desempregados",
-                                       Desem==2 ~ "ocupados"),
-                    
-                    experiencia = case_when(trab_ant==0 ~ "nao", 
-                                            trab_ant==1 ~ "sim")) %>% 
-      
-      dplyr::mutate(RAMO_CNAE = as.numeric(substr(F190,start = 1,stop = 2)),
-                    setor=factor(case_when(SETOR_CNAE==2000 ~ "industria",
-                                           SETOR_CNAE==3000 ~ "construcao",
-                                           SETOR_CNAE==4000 ~ "comercio",
-                                           SETOR_CNAE==5000 ~ "servico",
-                                           RAMO_CNAE==84 ~ "admpub_defesa_segursocial",
-                                           TRUE~"outros")),
-                    setorm=factor(case_when(
-                      SETOR_CNAE==5000 & RAMO_CNAE==84 ~ "admpub_defesa_segursocial",
-                      SETOR_CNAE==5000 & RAMO_CNAE!=84~"outros"))) %>% 
-      
-      dplyr::mutate(RAMO_CNAEm1=case_when(RAMO_CNAE==84~'adm_public', TRUE~'demais_ocupados')) %>%
-      dplyr::mutate(RAMO_CNAEm2=case_when(RAMO_CNAE==85~'educacao', RAMO_CNAE %in% c(86,87,88) ~'saude', TRUE~'demais_ocupados')) %>%
-      dplyr::mutate(RAMO_CNAEm3=case_when(RAMO_CNAE==84~'adm_public', RAMO_CNAE==85~'educacao', RAMO_CNAE %in% c(86,87,88) ~'saude', TRUE~'demais_ocupados')) %>%
-      
-      dplyr::mutate(RAMO_CNAE = as.numeric(substr(F190,start = 1,stop = 2)),
-                    
-                    cnae=factor(case_when(CNAE==1005 ~ "industrias_extrativas",
-                                          CNAE==1035 ~ "eletricidade_e_gas",
-                                          CNAE==1036 ~ "agua_esgoto_ativ",
-                                          CNAE==2000 ~ "industria_transf",
-                                          CNAE==3000 ~ "construcao",
-                                          CNAE==4000 ~ "comercio",
-                                          CNAE==5100 ~ "transporte_armaz_cor",
-                                          CNAE==5200 ~ "inform_comunicacao",
-                                          CNAE==5300 ~ "ativ_adm_serv_comp",
-                                          CNAE==5400 ~ "adm_publica_defesa",
-                                          CNAE==5500 ~ "alojam_alimentacao",
-                                          CNAE==5600 ~ "ativ_imobiliaria",
-                                          CNAE==5900 ~ "serv_domestico",
-                                          CNAE==9999 ~ "demais_setores",
-                                          CNAE==10000~"nao_ocupado"))) %>%
-      
-      dplyr::mutate(pos_ocup1=factor(case_when(POS==0~"nao_ocupado",
-                                               POS==1~"ass_priv_c_cart",
-                                               POS==2~"ass_priv_s_cart",
-                                               POS==3~"ass_pub",
-                                               POS==4~"ass_nao_sabe",
-                                               POS==5~"aut_pub",
-                                               POS==6~"aut_empresa",
-                                               POS==7~"empregador",
-                                               POS==8~"domest_mens",
-                                               POS==9~"domest_diar",
-                                               POS==10~"trab_familiar",
-                                               POS==11~"dono_neg_familiar",
-                                               POS==12~"outros"))) %>% 
-      
-      dplyr::mutate(pos_ocup2=factor(case_when(POS %in% c(1,2,3,4)~"assalariado",
-                                               POS %in% c(5,6)~"autonomo",
-                                               POS==7~"empregador",
-                                               POS %in% c(8,9)~"empreg_domestico",
-                                               POS %in% c(10,11,12)~"outros"))) %>%
-      
-      dplyr::mutate(pos_dom=case_when((C061==1)~'chefe',
-                                      (C061!=1)~'demais_membros')) %>%
-      
-      dplyr::mutate(
-        F590gg = 0,
-        F590g = as.numeric(case_when(((F591 == 100) & (F592 == 100) & (F593 == 100)) ~ -1, 
-                                     F593 == 101 ~ -1,
-                                     F591 == 101 ~ -1,
-                                     T~F590gg)),
-        F591m = ifelse(F591 == 100, 0, F591),
-        F592m = ifelse(F592 == 100, 0, F592),
-        F593m = ifelse(F593 == 100, 0, F593),
-        
-        F590 = as.numeric(ifelse(F590g != -1, (F591m*360 + F592m*30 + F593m)/30, NA))) %>% 
-      
-      dplyr::mutate(tperd_inat = ifelse(((F590> 0) & (F590 <= 3)), 1,
-                                        ifelse(((F590> 3) & (F590 <= 6)), 2,
-                                               ifelse(((F590> 6) & (F590 <= 12)), 3,
-                                                      ifelse(((F590> 12) & (F590 <= 24)), 4,
-                                                             ifelse(((F590> 24) & (F590 <= 36)), 5,
-                                                                    ifelse(((F590> 36) & (F590 <= 60)), 6,
-                                                                           ifelse((F590> 60), 7, F590)))))))) %>% 
-      
-      dplyr::mutate(tperd_inat_nome = case_when(tperd_inat %in% c(1,2) ~ 'Ate6meses',
-                                                tperd_inat==3 ~ 'Maisde6mesesa1ano',
-                                                tperd_inat==4 ~ 'Maisde1a2anos',
-                                                tperd_inat==5 ~ 'Maisde2a3anos',
-                                                tperd_inat==6 ~ 'Maisde3a5anos',
-                                                tperd_inat==7 ~ 'Maisde5anos',
-                                                T ~ "Missing")) %>% 
-      
-      dplyr::mutate(cond_ativg = as.character(F100),
-                    cond_ativ = case_when(cond_ativg=="11"~"Aposentado",
-                                          cond_ativg=="12"~"Estudante",
-                                          cond_ativg=="13"~"Dedicadoafazeresdomesticos",
-                                          cond_ativg %in% c(6, 7, 8)~"Licenciadoporsaude",
-                                          cond_ativg %in% c(1, 2, 3, 4, 5, 9, 10, 14)~"Outros",
-                                          cond_ativg=="100"~"Naoseaplica")) %>% 
-      
-      data.frame()
-    
-    ###### Estrutura do plano amostral - definindo as variaveis
-    
-    set.seed(1234)
-    sample.pedgeral <- 
-      survey::svydesign(ids = ~CONGLOM,
-                        strata=~GRUPO,
-                        weights=~FATOR,
-                        nest=TRUE,
-                        data=ped)
-    
-    sample.pedg <- survey::as.svrepdesign(sample.pedgeral, type = "subbootstrap")
-    srvyr::as_survey(sample.pedg)
-  })
-  
-  
-  
-  ##################
-  ###### TABELA 1
-  
-  
-  #### Estimativas da Populacao em Idade Ativa de 14 Anos e Mais e Taxas de Participacao e de Desemprego Total
-  
-  tb1p1 <- reactive({
-    sample.ped() %>%
-      srvyr::filter(C050>=14) %>%
-      srvyr::filter(!(SIT %in% c(0,10))) %>%
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%
-      srvyr::group_by(AAMM,sit) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=F),
-                     .fill="PIA") %>% 
-      select(-n_se) %>% 
-      dplyr::ungroup() %>%
-      dplyr::group_by(sit) %>%
-      dplyr::mutate(media_tb1 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="PIA")) %>%
-      dplyr::ungroup() %>%
-      
-      select(-c(n)) %>% 
-      tidyr::spread(sit, media_tb1) %>% 
-      dplyr::mutate(
-        PEA = Desempregado+Ocupado,
-        tx.desemp = round(Desempregado/PEA*100,1),
-        tx.partic = round(PEA/PIA*100,1)) %>% 
-      filter(!(is.na(PIA))) %>% 
-      data.frame()})
-  
-  
-  ## Fazer a media movel com 3 periodos para populacao total
-  tb1p2 <- reactive({
-    sample.ped() %>%
-      srvyr::mutate(count=1,
-                    AAMM=as.character(AAMM)) %>%
-      srvyr::group_by(AAMM) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=F)) %>% 
-      select(-n_se) %>% 
-      dplyr::mutate(
-        pop_total = round(rollmean(x = n, 3, align = "right", fill = NA)/1000)) %>% 
-      select(AAMM,pop_total) %>% 
-      data.frame()})
-  
-  
-  
-  ### Tab1 final
-  
-  tb1 <- reactive({ tb1p1() %>% 
-      dplyr::mutate(
-        PIA=round(PIA),
-        PEA=round(PEA),
-        Ocupado=round(Ocupado),
-        Desempregado=round(Desempregado),
-        Inativo=round(Inativo),
-        ind_pia = 100*(PIA/2121),
-        ind_pea = 100*(PEA/1421),
-        ind_ocup = 100*(Ocupado/1253),
-        ind_desemp = 100*(round(Desempregado)/168),
-        ind_inat = 100*(Inativo/700)) %>% 
-      left_join(tb1p2(), by=c("AAMM")) %>% 
-      select(AAMM, PIA, ind_pia, PEA, ind_pea, Ocupado, ind_ocup, Desempregado, ind_desemp, Inativo, ind_inat, tx.partic, tx.desemp, pop_total) %>% 
-      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-      data.frame()
-  })
-  
-  
-  
-  ######################################################################################
-  
-  
-  
-  ##################
-  ###### TABELA 2
-  
-  
-  #### Estimativas da Populacao Desempregada e Taxas de Desemprego, por Tipo
-  
-  tb2p1 <- reactive({
-    sample.ped() %>%
-      srvyr::filter(C050>=14) %>%
-      srvyr::filter(!(SIT %in% c(0,4,5,6,10))) %>%
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%
-      srvyr::group_by(AAMM,sit2) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=F, vartype="ci"),
-                     .fill="total"
-      ) %>% 
-      dplyr::ungroup() %>%
-      dplyr::group_by(sit2) %>%
-      dplyr::mutate(
-        media_tb2 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="total")) %>% 
-      dplyr::ungroup() %>%
-      
-      select(-c(n, n_low, n_upp)) %>% 
-      tidyr::spread(sit2, media_tb2) %>% 
-      data.frame()})
-  
-  
-  ##
-  tb2p2 <- reactive({
-    sample.ped() %>%
-      srvyr::filter(C050>=14) %>%
-      srvyr::filter(!(SIT %in% c(0,2,4,5,6,10))) %>%
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%
-      srvyr::group_by(AAMM,sit3) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=F, vartype="ci"),
-                     .fill="Desemp_Oculto"
-      ) %>% 
-      dplyr::ungroup() %>%
-      dplyr::group_by(sit3) %>%
-      dplyr::mutate(
-        media_tb2 =rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="Desemp_Oculto")) %>% 
-      dplyr::ungroup() %>%
-      
-      select(-c(n, n_low, n_upp)) %>% 
-      tidyr::spread(sit3, media_tb2) %>% 
-      data.frame()})
-  
-  
-  
-  ### Tab2 final
-  tb2 <- reactive({ tb2p1() %>%
-      full_join(tb2p2()) %>%
-      filter(!(is.na(total))) %>%
-      left_join(tb1p1(), by=c("AAMM")) %>%
-      dplyr::mutate(
-        tx.desemp=round(tx.desemp,1),
-        tx.desemp.aberto=round(Desemp_Aberto/PEA*100,1),
-        tx.desemp.oculto=round(Desemp_Oculto/PEA*100,1),
-        tx.desemp.oculto.precario=round(Desemp_Oculto_Precario/PEA*100,1),
-        tx.desemp.oculto.desalento=round(Desemp_Oculto_Desalento/PEA*100,1),
-        total = round(total),
-        Desemp_Aberto = round(Desemp_Aberto),
-        Desemp_Oculto = round(Desemp_Oculto),
-        Desemp_Oculto_Precario = round(Desemp_Oculto_Precario),
-        Desemp_Oculto_Desalento = round(Desemp_Oculto_Desalento)
-      ) %>% 
-      select(AAMM, total, tx.desemp,  Desemp_Aberto, tx.desemp.aberto,  Desemp_Oculto, tx.desemp.oculto, Desemp_Oculto_Precario, tx.desemp.oculto.precario, Desemp_Oculto_Desalento, tx.desemp.oculto.desalento) %>% 
-      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-      data.frame()
-  })
-  
-  
-  
-  ######################################################################################
-  
-  
-  
-  ##################
-  ###### TABELA 3
-  
-  
-  #### Taxa de Desemprego Total, por Grupos de Regi?es Administrativas
-  
-  tb3p1 <- reactive({
-    sample.ped() %>%
-      srvyr::filter(C050>=14) %>%
-      srvyr::filter(!(SIT %in% c(0,10))) %>%
-      
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%
-      srvyr::group_by(AAMM,sit,grupo) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=F),
-                     .fill="PIA"
-      ) %>% 
-      select(-n_se) %>% 
-      dplyr::ungroup() %>%
-      dplyr::group_by(sit, grupo) %>%
-      dplyr::mutate(
-        media_tb3 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="PIA")) %>%
-      filter(grupo!="PIA") %>% 
-      data.frame()})
-  
-  
-  
-  ## Fazer taxa de desemprego total
-  tb3p2 <- reactive({
-    tb3p1() %>% 
-      select(-c(n)) %>%   
-      dplyr::group_by(AAMM, sit) %>%
-      dplyr::summarise(media_tb3=sum(media_tb3,na.rm=T)) %>% 
-      tidyr::spread(sit, media_tb3) %>% 
-      dplyr::mutate(
-        PEA = Desempregado+Ocupado,
-        tx.desemp = round(Desempregado/PEA*100,1)) %>% 
-      select(AAMM, tx.desemp) %>% 
-      rename(Total=tx.desemp) %>% 
-      data.frame()})
-  
-  
-  
-  ### Tab3 final
-  tb3 <- reactive({ 
-    tb3p1() %>% 
-      select(-c(n)) %>% 
-      tidyr::spread(sit, media_tb3) %>% 
-      dplyr::mutate(
-        PEA = Desempregado+Ocupado,
-        tx.desemp = round(Desempregado/PEA*100,1)) %>% 
-      select(AAMM, grupo, tx.desemp) %>% 
-      
-      tidyr::spread(grupo, tx.desemp) %>% 
-      
-      left_join(tb3p2(), by=c("AAMM")) %>% 
-      
-      select(AAMM, Total, Grupo_1, Grupo_2, Grupo_3, Grupo_4) %>% 
-      filter(!(is.na(Total))) %>% 
-      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-      data.frame()
-  })
-  
-  
-  
-  ######################################################################################
-  
-  
-  
-  ##################
-  ###### TABELA 4
-  
-  
-  #### Taxas de Desemprego, por Atributos Pessoais e Trabalho Anterior
-  
-  ### Sexo
-  tb4g1 <- reactive({ 
-    sample.ped() %>%
-      srvyr::filter(C050>=14) %>%
-      srvyr::filter(!(SIT %in% c(0,10))) %>%
-      
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%  
-      
-      srvyr::group_by(AAMM,sit,sexo) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=F),
-                     .fill="PIA"
-      ) %>% 
-      select(-n_se) %>% 
-      dplyr::ungroup() %>%
-      data.frame()})
-  
-  
-  tb4p1 <- reactive({ tb4g1() %>%   
-      dplyr::group_by(sit, sexo) %>%
-      dplyr::mutate(
-        media_tb4 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>%
-      filter(!(AAMM=="PIA")) %>%
-      filter(sexo!="PIA") %>%
-      data.frame()
-  })
-  
-  
-  ##
-  tb4f1 <- reactive({ tb4p1() %>%
-      select(-c(n)) %>%
-      tidyr::spread(sit, media_tb4) %>%
-      dplyr::mutate(
-        PEA = Desempregado+Ocupado,
-        tx.desemp = round(Desempregado/PEA*100,1)) %>%
-      select(AAMM,sexo,tx.desemp) %>%
-      tidyr::spread(sexo,tx.desemp) %>%
-      data.frame()
-  })
-  
-  
-  ### Raca/cor
-  tb4g2 <- reactive({
-    sample.ped() %>%
-      srvyr::filter(C050>=14) %>%
-      srvyr::filter(!(SIT %in% c(0,10))) %>%
-      
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%  
-      
-      srvyr::group_by(AAMM,sit,raca) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=F),
-                     .fill="PIA"
-      ) %>% 
-      select(-n_se) %>% 
-      data.frame()
-  })
-  
-  
-  ##
-  tb4f2 <- reactive({ tb4g2() %>%  
-      dplyr::group_by(sit, raca) %>%
-      dplyr::mutate(
-        media_tb4 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="PIA")) %>%
-      filter(raca!="PIA") %>% 
-      select(AAMM,raca,sit,n,media_tb4) %>% 
-      dplyr::ungroup() %>%
-      select(-c(n)) %>% 
-      tidyr::spread(sit, media_tb4) %>% 
-      dplyr::mutate(PEA = Desempregado+Ocupado,
-                    tx.desemp = round(Desempregado/PEA*100,1)) %>% 
-      select(AAMM,raca,tx.desemp) %>% 
-      tidyr::spread(raca,tx.desemp) %>% 
-      select(AAMM,negro,nao_negro) %>% 
-      data.frame()
-  })
-  
-  
-  
-  ## Posicao domicilio - chefe e nao chefe
-  tb4g3 <- reactive({
-    sample.ped() %>%
-      srvyr::filter(C050>=14) %>%
-      srvyr::filter(!(SIT %in% c(0,10))) %>%
-      
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%  
-      
-      srvyr::group_by(AAMM,sit,pos_dom) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=F),
-                     .fill="PIA"
-      ) %>% 
-      select(-n_se) %>% 
-      data.frame()
-  })
-  
-  
-  ##
-  tb4f3 <- reactive({ tb4g3() %>% 
-      dplyr::group_by(sit, pos_dom) %>%
-      dplyr::mutate(
-        media_tb4 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="PIA")) %>%
-      filter(pos_dom!="PIA") %>%
-      dplyr::ungroup() %>% 
-      select(-c(n)) %>% 
-      tidyr::spread(sit, media_tb4) %>% 
-      dplyr::mutate(
-        PEA = Desempregado+Ocupado,
-        tx.desemp = round(Desempregado/PEA*100,1)) %>% 
-      select(AAMM,pos_dom,tx.desemp) %>% 
-      tidyr::spread(pos_dom,tx.desemp) %>% 
-      data.frame()
-  })
-  
-  
-  
-  ### Faixa Etaria
-  tb4g4 <- reactive({
-    sample.ped() %>%
-      srvyr::filter(C050>=14) %>%
-      srvyr::filter(!(SIT %in% c(0,10))) %>%
-      
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%
-      
-      srvyr::group_by(AAMM,sit,fxetaria) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=F),
-                     .fill="PIA"
-      ) %>% 
-      select(-n_se) %>%
-      data.frame()
-  })
-  
-  tb4g4_fxet_14e15 <- reactive({ data.frame(AAMM="202004", sit="Ocupado", fxetaria="fxetaria_14a15anos", n=0)})
-  
-  tb4g4j <- reactive({ tb4g4() %>% 
-      full_join(tb4g4_fxet_14e15()) %>% 
-      arrange(AAMM,sit, fxetaria) %>%
-      data.frame()})
-  
-  
-  ##
-  tb4f4 <- reactive({ tb4g4j() %>% 
-      dplyr::group_by(sit, fxetaria) %>%
-      dplyr::mutate(
-        media_tb4 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="PIA")) %>%
-      filter(fxetaria!="PIA") %>% 
-      dplyr::ungroup() %>% 
-      select(-c(n)) %>% 
-      tidyr::spread(sit, media_tb4) %>% 
-      dplyr::mutate(
-        PEA = Desempregado+Ocupado,
-        tx.desemp = round(Desempregado/PEA*100,1)) %>%
-      select(AAMM,fxetaria,tx.desemp) %>%
-      tidyr::spread(fxetaria,tx.desemp) %>%
-      data.frame()
-  })
-  
-  
-  ### Trabalho Anterior
-  tb4g5 <- reactive({
-    sample.ped() %>%
-      srvyr::filter(C050>=14) %>%
-      srvyr::filter(!(SIT %in% c(0,10))) %>%
-      
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%
-      
-      srvyr::group_by(AAMM,sit,Desemp,experiencia) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=F),
-                     .fill="PIA"
-      ) %>% 
-      select(-n_se) %>% 
-      data.frame()
-  })
-  
-  
-  ##
-  tb4f5 <- reactive({ tb4g5() %>%  
-      dplyr::group_by(sit, experiencia) %>%
-      dplyr::mutate(
-        media_tb4 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="PIA")) %>%
-      filter(experiencia!="PIA") %>% 
-      select(-Desemp) %>%
-      dplyr::ungroup() %>% 
-      select(-c(n)) %>% 
-      tidyr::spread(sit, media_tb4) %>% 
-      dplyr::mutate(
-        PEA = Desempregado+Ocupado,
-        tx.desemp = round(Desempregado/PEA*100,1)) %>% 
-      select(AAMM,experiencia,tx.desemp) %>% 
-      tidyr::spread(experiencia,tx.desemp) %>% 
-      select(AAMM,sim,nao) %>% 
-      rename(trab_anterior_sim=sim,trab_anterior_nao=nao) %>% 
-      data.frame()
-  })
-  
-  
-  ### Taxa de desemprego total
-  tb4pt <- reactive({
-    tb4p1() %>% 
-      select(-c(n)) %>%   
-      dplyr::group_by(AAMM, sit) %>%
-      dplyr::summarise(media_tb4=sum(media_tb4,na.rm=T)) %>% 
-      tidyr::spread(sit, media_tb4) %>% 
-      dplyr::mutate(
-        PEA = Desempregado+Ocupado,
-        tx.desemp = round(Desempregado/PEA*100,1)) %>% 
-      select(AAMM, tx.desemp) %>% 
-      rename(Total=tx.desemp) %>% 
-      data.frame()})
-  
-  
-  
-  ### Tab4 Final
-  
-  tb4 <- reactive({ tb4pt() %>% 
-      left_join(tb4f1(), by=c("AAMM")) %>% 
-      left_join(tb4f2(), by=c("AAMM")) %>% 
-      left_join(tb4f3(), by=c("AAMM")) %>% 
-      left_join(tb4f4(), by=c("AAMM")) %>% 
-      left_join(tb4f5(), by=c("AAMM")) %>% 
-      
-      select(AAMM,Total,Homens,Mulheres,fxetaria_14a15anos,fxetaria_16a24anos,fxetaria_25a39anos,fxetaria_40a49anos,fxetaria_50a59anos,fxetaria_60anosemais,
-             chefe,demais_membros,negro,nao_negro,trab_anterior_sim,trab_anterior_nao) %>% 
-      filter(!(is.na(Total))) %>% 
-      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-      data.frame()
-  })
-  
-  
-  
-  ######################################################################################
-  
-  
-  
-  ##################
-  ###### TABELA 5
-  
-  
-  #### Taxas de Participacao, por Atributos Pessoais
-  
-  
-  ### Sexo
-  tb5p1 <- reactive({ 
-    tb4g1() %>%
-      dplyr::group_by(sit, sexo) %>%
-      dplyr::mutate(
-        media_tb5 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="PIA")) %>%
-      filter(sexo!="PIA") %>%
-      data.frame()
-  })
-  
-  
-  ##
-  tb5f1 <- reactive({ tb5p1() %>% 
-      select(-c(n)) %>% 
-      tidyr::spread(sit, media_tb5) %>% 
-      dplyr::mutate(
-        PEA = Desempregado+Ocupado,
-        PIA = Desempregado+Ocupado+Inativo,
-        tx.partic = round(PEA/PIA*100,1)) %>% 
-      select(AAMM,sexo,tx.partic) %>% 
-      tidyr::spread(sexo,tx.partic) %>% 
-      data.frame()
-  })
-  
-  
-  
-  ### Raca/cor
-  tb5f2 <- reactive({ 
-    tb4g2() %>%
-      dplyr::group_by(sit, raca) %>%
-      dplyr::mutate(
-        media_tb5 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="PIA")) %>%
-      filter(raca!="PIA") %>% 
-      select(AAMM,raca,sit,n,media_tb5) %>% 
-      dplyr::ungroup() %>% 
-      select(-c(n)) %>% 
-      tidyr::spread(sit, media_tb5) %>% 
-      dplyr::mutate(
-        PEA = Desempregado+Ocupado,
-        PIA = Desempregado+Ocupado+Inativo,
-        tx.partic = round(PEA/PIA*100,1)) %>% 
-      select(AAMM,raca,tx.partic) %>% 
-      tidyr::spread(raca,tx.partic) %>% 
-      select(AAMM,negro,nao_negro) %>% 
-      data.frame()
-  })
-  
-  
-  
-  ### Posicao domicilio - chefe e nao chefe
-  tb5f3 <- reactive({ 
-    tb4g3() %>%
-      dplyr::group_by(sit, pos_dom) %>%
-      dplyr::mutate(
-        media_tb5 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="PIA")) %>%
-      filter(pos_dom!="PIA") %>% 
-      dplyr::ungroup() %>% 
-      select(-c(n)) %>% 
-      tidyr::spread(sit, media_tb5) %>% 
-      dplyr::mutate(
-        PEA = Desempregado+Ocupado,
-        PIA = Desempregado+Ocupado+Inativo,
-        tx.partic = round(PEA/PIA*100,1)) %>% 
-      select(AAMM,pos_dom,tx.partic) %>% 
-      tidyr::spread(pos_dom,tx.partic) %>% 
-      data.frame()
-  })
-  
-  
-  
-  ### Faixa Etaria
-  tb5f4 <- reactive({ 
-    tb4g4j() %>%
-      dplyr::group_by(sit, fxetaria) %>%
-      dplyr::mutate(
-        media_tb5 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="PIA")) %>%
-      filter(fxetaria!="PIA") %>% 
-      dplyr::ungroup() %>% 
-      select(-c(n)) %>% 
-      tidyr::spread(sit, media_tb5) %>% 
-      dplyr::mutate(
-        PEA = Desempregado+Ocupado,
-        PIA = Desempregado+Ocupado+Inativo,
-        tx.partic = round(PEA/PIA*100,1)) %>% 
-      select(AAMM,fxetaria,tx.partic) %>% 
-      tidyr::spread(fxetaria,tx.partic) %>% 
-      data.frame()
-  })
-  
-  
-  
-  ### Taxa de desemprego total
-  tb5pt <- reactive({
-    tb5p1() %>% 
-      select(-c(n)) %>%   
-      dplyr::group_by(AAMM, sit) %>%
-      dplyr::summarise(media_tb5=sum(media_tb5,na.rm=T)) %>% 
-      tidyr::spread(sit, media_tb5) %>% 
-      dplyr::mutate(
-        PEA = Desempregado+Ocupado,
-        PIA = Desempregado+Ocupado+Inativo,
-        tx.partic = round(PEA/PIA*100,1)) %>% 
-      select(AAMM, tx.partic) %>% 
-      rename(Total=tx.partic) %>% 
-      data.frame()})
-  
-  
-  
-  
-  ### Tab5 Final
-  tb5 <- reactive({ tb5pt() %>% 
-      left_join(tb5f1(), by=c("AAMM")) %>% 
-      left_join(tb5f2(), by=c("AAMM")) %>% 
-      left_join(tb5f3(), by=c("AAMM")) %>% 
-      left_join(tb5f4(), by=c("AAMM")) %>% 
-      
-      select(AAMM,Total,Homens,Mulheres,fxetaria_14a15anos,fxetaria_16a24anos,fxetaria_25a39anos,fxetaria_40a49anos,fxetaria_50a59anos,fxetaria_60anosemais,
-             chefe,demais_membros,negro,nao_negro) %>% 
-      filter(!(is.na(Total))) %>% 
-      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-      data.frame()
-  })
-  
-  
-  
-  ######################################################################################
-  
-  
-  
-  ##################
-  ###### TABELA 6
-  
-  
-  #### Distribuicao dos Desempregados, por Atributos Pessoais e Trabalho Anterior
-  
-  ### Sexo
-  tb6p1 <- reactive({ 
-    tb4g1() %>%
-      dplyr::group_by(sit, sexo) %>%
-      dplyr::mutate(
-        media_tb6 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="PIA")) %>%
-      filter(sexo!="PIA") %>%
-      data.frame()
-  })
-  
-  
-  ##
-  tb6f1 <- reactive({ tb6p1() %>% 
-      select(-c(n)) %>% 
-      filter(sit=="Desempregado") %>% 
-      tidyr::spread(sexo, media_tb6) %>% 
-      dplyr::mutate(
-        total = Homens+Mulheres,
-        perc_Homens = round(Homens/total*100,1),
-        perc_Mulheres = round(Mulheres/total*100,1)) %>% 
-      select(AAMM,perc_Homens,perc_Mulheres) %>% 
-      data.frame()
-  })
-  
-  
-  
-  ### Raca/cor
-  tb6f2 <- reactive({ 
-    tb4g2() %>%
-      dplyr::group_by(sit, raca) %>%
-      dplyr::mutate(
-        media_tb6 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="PIA")) %>%
-      filter(raca!="PIA") %>% 
-      select(AAMM,raca,sit,n,media_tb6) %>% 
-      dplyr::ungroup() %>% 
-      select(-c(n)) %>% 
-      filter(sit=="Desempregado") %>% 
-      tidyr::spread(raca, media_tb6) %>% 
-      dplyr::mutate(
-        total = nao_negro+negro,
-        perc_nao_negro = round(nao_negro/total*100,1),
-        perc_negro = round(negro/total*100,1)) %>% 
-      select(AAMM,perc_nao_negro,perc_negro) %>% 
-      data.frame()
-  })
-  
-  
-  
-  ### Posicao domicilio - chefe e nao chefe
-  tb6f3 <- reactive({ 
-    tb4g3() %>%
-      dplyr::group_by(sit, pos_dom) %>%
-      dplyr::mutate(
-        media_tb6 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="PIA")) %>%
-      filter(pos_dom!="PIA") %>% 
-      dplyr::ungroup() %>% 
-      select(-c(n)) %>% 
-      filter(sit=="Desempregado") %>% 
-      tidyr::spread(pos_dom, media_tb6) %>% 
-      dplyr::mutate(
-        total = chefe+demais_membros,
-        perc_chefe = round(chefe/total*100,1),
-        perc_demais_membros = round(demais_membros/total*100,1)) %>% 
-      select(AAMM,perc_chefe,perc_demais_membros) %>% 
-      data.frame()
-  })
-  
-  
-  
-  ### Faixa Etaria
-  tb6f4 <- reactive({ 
-    tb4g4() %>%
-      dplyr::group_by(sit, fxetaria) %>%
-      dplyr::mutate(
-        media_tb6 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="PIA")) %>%
-      filter(fxetaria!="PIA") %>% 
-      dplyr::ungroup() %>% 
-      select(-c(n)) %>% 
-      filter(sit=="Desempregado") %>% 
-      tidyr::spread(fxetaria, media_tb6) %>% 
-      dplyr::mutate(
-        total = fxetaria_14a15anos+fxetaria_16a24anos+fxetaria_25a39anos+fxetaria_40a49anos+fxetaria_50a59anos+fxetaria_60anosemais,
-        perc_fxetaria_14a15anos = round(fxetaria_14a15anos/total*100,1),
-        perc_fxetaria_16a24anos = round(fxetaria_16a24anos/total*100,1),
-        perc_fxetaria_25a39anos = round(fxetaria_25a39anos/total*100,1),
-        perc_fxetaria_40a49anos = round(fxetaria_40a49anos/total*100,1),
-        perc_fxetaria_50a59anos = round(fxetaria_50a59anos/total*100,1),
-        perc_fxetaria_60anosemais = round(fxetaria_60anosemais/total*100,1)
-      ) %>% 
-      select(AAMM,perc_fxetaria_14a15anos,perc_fxetaria_16a24anos,perc_fxetaria_25a39anos,perc_fxetaria_40a49anos,perc_fxetaria_50a59anos,perc_fxetaria_60anosemais) %>% 
-      data.frame()
-  })
-  
-  
-  
-  ### Trabalho Anterior
-  tb6f5 <- reactive({ 
-    tb4g5() %>%
-      dplyr::group_by(sit, experiencia) %>%
-      dplyr::mutate(
-        media_tb6 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="PIA")) %>%
-      filter(experiencia!="PIA") %>% 
-      select(-Desemp) %>% 
-      dplyr::ungroup() %>% 
-      select(-c(n)) %>% 
-      filter(sit=="Desempregado") %>% 
-      tidyr::spread(experiencia, media_tb6) %>% 
-      dplyr::mutate(
-        total = sim+nao,
-        perc_trab_anterior_sim = round(sim/total*100,1),
-        perc_trab_anterior_nao = round(nao/total*100,1)) %>% 
-      select(AAMM,perc_trab_anterior_sim,perc_trab_anterior_nao) %>% 
-      data.frame()
-  })
-  
-  
-  
-  ### Taxa de desemprego total
-  tb6pt <- reactive({
-    tb6p1() %>% 
-      select(-c(n)) %>%   
-      filter(sit=="Desempregado") %>% 
-      tidyr::spread(sexo, media_tb6) %>% 
-      dplyr::mutate(
-        total = Homens+Mulheres,
-        perc_Total = round(total/total*100,1)) %>% 
-      select(AAMM,perc_Total) %>% 
-      data.frame()})
-  
-  
-  
-  ### Tab6 Final
-  
-  tb6 <- reactive({ tb6pt() %>% 
-      left_join(tb6f1(), by=c("AAMM")) %>% 
-      left_join(tb6f2(), by=c("AAMM")) %>% 
-      left_join(tb6f3(), by=c("AAMM")) %>% 
-      left_join(tb6f4(), by=c("AAMM")) %>% 
-      left_join(tb6f5(), by=c("AAMM")) %>% 
-      
-      select(AAMM,perc_Total,perc_Homens,perc_Mulheres,perc_fxetaria_14a15anos,perc_fxetaria_16a24anos,perc_fxetaria_25a39anos,perc_fxetaria_40a49anos,perc_fxetaria_50a59anos,perc_fxetaria_60anosemais,
-             perc_chefe,perc_demais_membros,perc_negro,perc_nao_negro,perc_trab_anterior_sim,perc_trab_anterior_nao) %>% 
-      filter(!(is.na(perc_Total))) %>% 
-      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-      data.frame()
-  })
-  
-  
-  
-  ######################################################################################
-  
-  
-  
-  ##################
-  ###### TABELA 7
-  
-  
-  #### Distribuicao da Populacao Economicamente Ativa, por Atributos Pessoais e Trabalho Anterior
-  
-  ### Sexo
-  tb7p1 <- reactive({ 
-    tb4g1() %>%
-      filter(sit %in% c("Desempregado","Ocupado")) %>% 
-      dplyr::group_by(AAMM,sexo) %>%
-      dplyr::summarise(n=sum(n,na.rm=TRUE)) %>% 
-      dplyr::ungroup() %>%
-      dplyr::group_by(sexo) %>%
-      dplyr::mutate(
-        media_tb7 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="PIA")) %>%
-      filter(sexo!="PIA") %>%
-      data.frame()
-  })
-  
-  
-  ##
-  tb7f1 <- reactive({ tb7p1() %>% 
-      select(-c(n)) %>% 
-      tidyr::spread(sexo, media_tb7) %>% 
-      dplyr::mutate(
-        total = Homens+Mulheres,
-        perc_Homens = round(Homens/total*100,1),
-        perc_Mulheres = round(Mulheres/total*100,1)) %>% 
-      select(AAMM,perc_Homens,perc_Mulheres) %>% 
-      data.frame()
-  })
-  
-  
-  
-  ### Raca/cor
-  tb7f2 <- reactive({ 
-    tb4g2() %>%
-      filter(sit %in% c("Desempregado","Ocupado")) %>% 
-      dplyr::group_by(AAMM,raca) %>%
-      dplyr::summarise(n=sum(n,na.rm=TRUE)) %>% 
-      dplyr::ungroup() %>%
-      dplyr::group_by(raca) %>%
-      dplyr::mutate(
-        media_tb7 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="PIA")) %>%
-      filter(raca!="PIA") %>% 
-      select(AAMM,raca,n,media_tb7) %>% 
-      dplyr::ungroup() %>% 
-      select(-c(n)) %>% 
-      tidyr::spread(raca, media_tb7) %>% 
-      dplyr::mutate(
-        total = nao_negro+negro,
-        perc_nao_negro = round(nao_negro/total*100,1),
-        perc_negro = round(negro/total*100,1)) %>% 
-      select(AAMM,perc_nao_negro,perc_negro) %>% 
-      data.frame()
-  })
-  
-  
-  
-  ### Posicao domicilio - chefe e nao chefe
-  tb7f3 <- reactive({ 
-    tb4g3() %>%
-      filter(sit %in% c("Desempregado","Ocupado")) %>% 
-      dplyr::group_by(AAMM,pos_dom) %>%
-      dplyr::summarise(n=sum(n,na.rm=TRUE)) %>% 
-      dplyr::ungroup() %>%
-      dplyr::group_by(pos_dom) %>%
-      dplyr::mutate(
-        media_tb7 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="PIA")) %>%
-      filter(pos_dom!="PIA") %>% 
-      dplyr::ungroup() %>%  
-      select(-c(n)) %>% 
-      tidyr::spread(pos_dom, media_tb7) %>% 
-      dplyr::mutate(
-        total = chefe+demais_membros,
-        perc_chefe = round(chefe/total*100,1),
-        perc_demais_membros = round(demais_membros/total*100,1)) %>% 
-      select(AAMM,perc_chefe,perc_demais_membros) %>% 
-      data.frame()})
-  
-  
-  
-  ### Faixa Etaria
-  tb7f4 <- reactive({ 
-    tb4g4() %>%
-      filter(sit %in% c("Desempregado","Ocupado")) %>% 
-      dplyr::group_by(AAMM,fxetaria) %>%
-      dplyr::summarise(n=sum(n,na.rm=TRUE)) %>% 
-      dplyr::ungroup() %>%
-      dplyr::group_by(fxetaria) %>%
-      dplyr::mutate(
-        media_tb7 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="PIA")) %>%
-      filter(fxetaria!="PIA") %>% 
-      dplyr::ungroup() %>%  
-      select(-c(n)) %>% 
-      tidyr::spread(fxetaria, media_tb7) %>% 
-      dplyr::mutate(
-        total = fxetaria_14a15anos+fxetaria_16a24anos+fxetaria_25a39anos+fxetaria_40a49anos+fxetaria_50a59anos+fxetaria_60anosemais,
-        perc_fxetaria_14a15anos = round(fxetaria_14a15anos/total*100,1),
-        perc_fxetaria_16a24anos = round(fxetaria_16a24anos/total*100,1),
-        perc_fxetaria_25a39anos = round(fxetaria_25a39anos/total*100,1),
-        perc_fxetaria_40a49anos = round(fxetaria_40a49anos/total*100,1),
-        perc_fxetaria_50a59anos = round(fxetaria_50a59anos/total*100,1),
-        perc_fxetaria_60anosemais = round(fxetaria_60anosemais/total*100,1)
-      ) %>% 
-      select(AAMM,perc_fxetaria_14a15anos,perc_fxetaria_16a24anos,perc_fxetaria_25a39anos,perc_fxetaria_40a49anos,perc_fxetaria_50a59anos,perc_fxetaria_60anosemais) %>% 
-      data.frame()
-  })
-  
-  
-  
-  ### Trabalho Anterior
-  tb7f5 <- reactive({ 
-    tb4g5() %>%
-      filter(sit %in% c("Desempregado","Ocupado")) %>% 
-      dplyr::group_by(AAMM,experiencia) %>%
-      dplyr::summarise(n=sum(n,na.rm=TRUE)) %>% 
-      dplyr::ungroup() %>%
-      dplyr::group_by(experiencia) %>%
-      dplyr::mutate(
-        media_tb7 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="PIA")) %>%
-      filter(experiencia!="PIA") %>% 
-      dplyr::ungroup() %>%  
-      select(-c(n)) %>% 
-      tidyr::spread(experiencia, media_tb7) %>% 
-      dplyr::mutate(
-        total = sim+nao,
-        perc_trab_anterior_sim = round(sim/total*100,1),
-        perc_trab_anterior_nao = round(nao/total*100,1)) %>% 
-      select(AAMM,perc_trab_anterior_sim,perc_trab_anterior_nao) %>% 
-      data.frame()
-  })
-  
-  
-  
-  ### Taxa de desemprego total
-  tb7pt <- reactive({
-    tb7p1() %>% 
-      select(-c(n)) %>%
-      tidyr::spread(sexo, media_tb7) %>% 
-      dplyr::mutate(
-        total = Homens+Mulheres,
-        perc_Total = round(total/total*100,1)) %>% 
-      select(AAMM,perc_Total) %>% 
-      data.frame()})
-  
-  
-  
-  ### Tab7 Final
-  
-  tb7 <- reactive({ tb7pt() %>% 
-      left_join(tb7f1(), by=c("AAMM")) %>% 
-      left_join(tb7f2(), by=c("AAMM")) %>% 
-      left_join(tb7f3(), by=c("AAMM")) %>% 
-      left_join(tb7f4(), by=c("AAMM")) %>% 
-      left_join(tb7f5(), by=c("AAMM")) %>% 
-      
-      select(AAMM,perc_Total,perc_Homens,perc_Mulheres,perc_fxetaria_14a15anos,perc_fxetaria_16a24anos,perc_fxetaria_25a39anos,perc_fxetaria_40a49anos,perc_fxetaria_50a59anos,perc_fxetaria_60anosemais,
-             perc_chefe,perc_demais_membros,perc_negro,perc_nao_negro,perc_trab_anterior_sim,perc_trab_anterior_nao) %>% 
-      filter(!(is.na(perc_Total))) %>% 
-      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-      data.frame()
-  })
-  
-  
-  
-  ######################################################################################
-  
-  
-  
-  ##################
-  ###### TABELA 8
-  
-  
-  #### Estimativas e Indices do Nivel de Ocupacao, por Setor de Atividade
-  
-  ### Nivel de Ocupacao por Setor de Atividade - Sem dividir o Servicos
-  tb8p1 <- reactive({
-    sample.ped() %>%
-      srvyr::filter(SIT==4) %>% 
-      srvyr::filter(C050>=14) %>%
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%
-      
-      srvyr::group_by(AAMM,setor) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=T),
-                     .fill="total"
-      ) %>%
-      select(-n_se) %>%
-      filter(AAMM!="total") %>%
-      dplyr::ungroup() %>%
-      dplyr::group_by(setor) %>%
-      dplyr::mutate(
-        media_tb8_1 = round(rollmean(x = n, 3, align = "right", fill = NA)/1000)) %>%
-      select(-n) %>%
-      filter(!is.na(media_tb8_1)) %>%
-      filter(setor!="outros") %>%
-      tidyr::spread(setor, media_tb8_1) %>%
-      
-      dplyr::mutate(
-        ind_total = 100*(total/1253),
-        ind_indtrans = 100*(industria/43),
-        ind_constr = 100*(construcao/83),
-        ind_comerc = 100*(comercio/226),
-        ind_servicos = 100*(servico/881)) %>%
-      
-      select(AAMM, total, ind_total, industria, ind_indtrans, construcao, ind_constr, comercio, ind_comerc, servico, ind_servicos) %>% 
-      data.frame()
-  })
-  
-  
-  
-  ### Servico - Adm Publica
-  tb8p2 <- reactive({
-    sample.ped() %>%
-      srvyr::filter(SIT==4) %>% 
-      srvyr::filter(C050>=14) %>%
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%
-      
-      srvyr::group_by(AAMM,setorm) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=T),
-                     .fill="total"
-      ) %>%
-      select(-n_se) %>%
-      filter(AAMM!="total") %>%
-      dplyr::ungroup() %>%
-      dplyr::group_by(setorm) %>%
-      dplyr::mutate(
-        media_tb8_2 = round(rollmean(x = n, 3, align = "right", fill = NA)/1000)) %>%
-      select(-n) %>%
-      filter(!is.na(media_tb8_2)) %>%
-      filter(!(setorm %in% c("outros","NA","total"))) %>%
-      tidyr::spread(setorm, media_tb8_2) %>%
-      
-      dplyr::mutate(
-        ind_admpub = 100*(admpub_defesa_segursocial/212)) %>%
-      
-      data.frame()
-  })
-  
-  
-  
-  ### Tab8 Final
-  
-  tb8 <- reactive({ tb8p1() %>% 
-      left_join(tb8p2(), by=c("AAMM")) %>% 
-      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-      data.frame()
-  })
-  
-  
-  
-  ######################################################################################
-  
-  
-  
-  ##################
-  ###### TABELA 9
-  
-  
-  #### Distribuicao dos Ocupados, por Setor de Atividade
-  
-  ## Comercio, Construcao, Industria, Servico e Total
-  tb9_p1 <- reactive({ 
-    sample.ped() %>%
-      srvyr::filter(SIT==4) %>% 
-      srvyr::filter(C050>=14) %>%
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%
-      srvyr::group_by(AAMM,setor) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=T),
-                     .fill="total"
-      ) %>%
-      select(-n_se) %>%
-      filter(AAMM!="total") %>%
-      dplyr::ungroup() %>%
-      
-      dplyr::group_by(setor) %>%
-      dplyr::mutate(
-        media_tb9_1 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>%
-      select(-n) %>%
-      filter(!is.na(media_tb9_1)) %>%
-      filter(setor!="outros") %>%
-      tidyr::spread(setor, media_tb9_1) %>%
-      data.frame()
-  })
-  
-  
-  
-  ## Administracao Publica, defesa e seguridade social
-  tb9_p2 <- reactive({ 
-    sample.ped() %>%
-      srvyr::filter(SIT==4) %>% 
-      srvyr::filter(C050>=14) %>%
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%
-      srvyr::group_by(AAMM,setorm) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=T),
-                     .fill="total"
-      ) %>%
-      select(-n_se) %>%
-      filter(AAMM!="total") %>%
-      dplyr::ungroup() %>%
-      
-      dplyr::group_by(setorm) %>%
-      dplyr::mutate(
-        media_tb9_2 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>%
-      select(-n) %>%
-      filter(!is.na(media_tb9_2)) %>%
-      filter(!(setorm %in% c("outros",NA,"total"))) %>%
-      tidyr::spread(setorm, media_tb9_2) %>%
-      data.frame()
-  })
-  
-  
-  
-  ### Tab9 Final
-  
-  tb9j <- reactive({ tb9_p1() %>% 
-      left_join(tb9_p2(), by=c("AAMM")) %>% 
-      select(AAMM, total, industria, construcao, comercio, servico, admpub_defesa_segursocial) %>%
-      data.frame()
-  })
-  
-  
-  ##
-  tb9 <- reactive({ tb9j() %>%
-      dplyr::mutate(
-        perc_total = 100.0,
-        perc_indtrans = round(100*(industria/total),1),
-        perc_constr = round(100*(construcao/total),1),
-        perc_comerc = round(100*(comercio/total),1),
-        perc_servicos = round(100*(servico/total),1),
-        perc_admpub = round(100*(admpub_defesa_segursocial/total),1)
-      ) %>%
-      select(AAMM, perc_total, perc_indtrans, perc_constr, perc_comerc, perc_servicos, perc_admpub) %>% 
-      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-      data.frame()
-  })
-  
-  
-  
-  ######################################################################################
-  
-  
-  
-  ##################
-  ###### TABELA 10
-  
-  
-  #### Indices do Nivel de Ocupacao, por Ramo de Atividade
-  tb10_p1 <- reactive({
-    sample.ped() %>%
-      srvyr::filter(SIT==4) %>% 
-      srvyr::filter(C050>=14) %>%
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%
-      
-      srvyr::group_by(AAMM,cnae) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=T),
-                     .fill="total"
-      ) %>%
-      select(-n_se) %>%
-      filter(AAMM!="total") %>%
-      dplyr::ungroup() %>%
-      
-      dplyr::group_by(cnae) %>%
-      dplyr::mutate(
-        media_tb10_1 = round(rollmean(x = n, 3, align = "right", fill = NA)/1000)) %>%
-      select(-n) %>%
-      filter(!is.na(media_tb10_1)) %>%
-      tidyr::spread(cnae, media_tb10_1) %>%
-      
-      dplyr::mutate(
-        ind_transporte_armaz_cor = 100*(transporte_armaz_cor/43),
-        ind_inform_comunicacao = 100*(inform_comunicacao/124),
-        ind_ativ_adm_serv_comp = 100*(ativ_adm_serv_comp/102),
-        ind_adm_publica_defesa  = 100*(adm_publica_defesa/388),
-        ind_alojam_alimentacao = 100*(alojam_alimentacao/132),
-        ind_serv_domestico = 100*(serv_domestico/81)) %>%
-      data.frame()
-  })
-  
-  
-  
-  ##
-  tb10_p2 <- reactive({
-    sample.ped() %>%
-      srvyr::filter(SIT==4) %>% 
-      srvyr::filter(C050>=14) %>%
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%
-      
-      srvyr::group_by(AAMM,RAMO_CNAEm3) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=T),
-                     .fill="total"
-      ) %>%
-      select(-n_se) %>%
-      filter(AAMM!="total") %>%
-      dplyr::ungroup() %>%
-      
-      dplyr::group_by(RAMO_CNAEm3) %>%
-      dplyr::mutate(
-        media_tb10_2 = round(rollmean(x = n, 3, align = "right", fill = NA)/1000)) %>%
-      select(-n) %>%
-      filter(!is.na(media_tb10_2)) %>%
-      filter(RAMO_CNAEm3!="demais_ocupados") %>%
-      tidyr::spread(RAMO_CNAEm3, media_tb10_2) %>%
-      
-      dplyr::mutate(
-        ind_educacao = 100*(educacao/103),
-        ind_saude = 100*(saude/73)) %>%
-      
-      select(AAMM, educacao, ind_educacao, saude, ind_saude) %>%  
-      data.frame()
-  })
-  
-  
-  
-  ### Tab10 Final
-  
-  tb10 <- reactive({ tb8() %>% 
-      
-      left_join(tb10_p1(), by=c("AAMM")) %>% 
-      left_join(tb10_p2(), by=c("AAMM")) %>% 
-      
-      select(AAMM, ind_total, ind_indtrans, ind_constr, ind_comerc, ind_servicos, ind_transporte_armaz_cor, ind_inform_comunicacao, ind_ativ_adm_serv_comp, ind_adm_publica_defesa, 
-             ind_admpub, ind_educacao, ind_saude, ind_alojam_alimentacao, ind_serv_domestico) %>% 
-      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-      data.frame()
-    
-  })
-  
-  
-  ######################################################################################
-  
-  
-  
-  ##################
-  ###### TABELA 11
-  
-  
-  #### Estimativas e Indices do Nivel de Ocupacao, por Posicao na Ocupacao
-  tb11_p1 <- reactive({
-    sample.ped() %>%
-      srvyr::filter(SIT==4) %>% 
-      srvyr::filter(C050>=14) %>%
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%
-      
-      srvyr::group_by(AAMM,pos_ocup1) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=T),
-                     .fill="total"
-      ) %>%
-      select(-n_se) %>%
-      filter(AAMM!="total") %>%
-      dplyr::ungroup() %>%
-      
-      dplyr::group_by(pos_ocup1) %>%
-      dplyr::mutate(
-        media_tb11_1 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>%
-      select(-n) %>%
-      filter(!is.na(media_tb11_1)) %>%
-      dplyr::ungroup() %>%
-      
-      dplyr::mutate(media_tb11_1=round(media_tb11_1)) %>%
-      tidyr::spread(pos_ocup1, media_tb11_1) %>%
-      data.frame()
-  })
-  
-  
-  ##
-  tb11_p2 <- reactive({
-    sample.ped() %>%
-      srvyr::filter(SIT==4) %>% 
-      srvyr::filter(C050>=14) %>%
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%
-      
-      srvyr::group_by(AAMM,pos_ocup2) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=T),
-                     .fill="ocupado"
-      ) %>%
-      select(-n_se) %>%
-      filter(AAMM!="ocupado") %>%
-      dplyr::ungroup() %>%
-      
-      dplyr::group_by(pos_ocup2) %>%
-      dplyr::mutate(
-        media_tb11_2 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>%
-      select(-n) %>%
-      filter(!is.na(media_tb11_2)) %>%
-      dplyr::ungroup() %>%
-      
-      dplyr::mutate(media_tb11_2=round(media_tb11_2)) %>% 
-      tidyr::spread(pos_ocup2, media_tb11_2) %>%
-      data.frame()
-  })
-  
-  
-  ##
-  tb11_p3 <- reactive({
-    sample.ped() %>%
-      srvyr::filter(SIT==4) %>% 
-      srvyr::filter(C050>=14) %>%
-      srvyr::mutate(pos_ocup1=as.character(pos_ocup1),
-                    pos_ocup_setor_priv=case_when(pos_ocup1=="ass_priv_c_cart"~"assalariado_setor_priv",
-                                                  pos_ocup1=="ass_priv_s_cart"~"assalariado_setor_priv",
-                                                  TRUE~pos_ocup1)) %>% 
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%
-      
-      srvyr::group_by(AAMM,pos_ocup_setor_priv) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=T),
-                     .fill="total"
-      ) %>%
-      select(-n_se) %>%
-      filter(AAMM!="total") %>%
-      dplyr::ungroup() %>%
-      
-      dplyr::group_by(pos_ocup_setor_priv) %>%
-      dplyr::mutate(
-        media_tb11_3 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>%
-      select(-n) %>%
-      filter(!is.na(media_tb11_3)) %>%
-      dplyr::ungroup() %>%
-      
-      dplyr::mutate(media_tb11_3=round(media_tb11_3)) %>%
-      tidyr::spread(pos_ocup_setor_priv, media_tb11_3) %>%
-      select(AAMM, assalariado_setor_priv) %>%
-      data.frame()
-  })
-  
-  
-  
-  ### Tab11 Final
-  
-  tb11 <- reactive({ tb11_p1() %>% 
-      left_join(tb11_p2(), by=c("AAMM")) %>% 
-      left_join(tb11_p3(), by=c("AAMM")) %>% 
-      
-      dplyr::rename(setor_privado=assalariado_setor_priv) %>% 
-      dplyr::mutate(ind_ocup = 100*(ocupado/1253),
-                    ind_assal_tot = 100*(assalariado/927),
-                    ind_assal_priv = 100*(setor_privado/623),
-                    ind_assal_priv_c_cart = 100*(ass_priv_c_cart/527),
-                    ind_assal_priv_s_cart = 100*(ass_priv_s_cart/97),
-                    ind_assal_publ = 100*(ass_pub/304),
-                    ind_autonomos = 100*(autonomo/144),
-                    ind_emp_dom = 100*(empreg_domestico/81)) %>% 
-      
-      select(AAMM, ocupado, ind_ocup, assalariado, ind_assal_tot, setor_privado, ind_assal_priv, ass_priv_c_cart, ind_assal_priv_c_cart, 
-             ass_priv_s_cart, ind_assal_priv_s_cart, ass_pub, ind_assal_publ, autonomo, ind_autonomos, empreg_domestico, ind_emp_dom) %>% 
-      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-      
-      data.frame()
-  })
-  
-  
-  
-  ######################################################################################
-  
-  
-  
-  ##################
-  ###### TABELA 12
-  
-  
-  #### Distribuicao dos Ocupados, por Posicao na Ocupacao
-  tb11_p1m <- reactive({
-    sample.ped() %>%
-      srvyr::filter(SIT==4) %>% 
-      srvyr::filter(C050>=14) %>%
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%
-      
-      srvyr::group_by(AAMM,pos_ocup1) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=T),
-                     .fill="total"
-      ) %>%
-      select(-n_se) %>%
-      filter(AAMM!="total") %>%
-      dplyr::ungroup() %>%
-      
-      dplyr::group_by(pos_ocup1) %>%
-      dplyr::mutate(
-        media_tb11_1 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>%
-      select(-n) %>%
-      filter(!is.na(media_tb11_1)) %>%
-      dplyr::ungroup() %>%
-      
-      tidyr::spread(pos_ocup1, media_tb11_1) %>%
-      
-      data.frame()})
-  
-  
-  
-  ##
-  tb11_p2m <- reactive({
-    sample.ped() %>%
-      srvyr::filter(SIT==4) %>% 
-      srvyr::filter(C050>=14) %>%
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%
-      
-      srvyr::group_by(AAMM,pos_ocup2) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=T),
-                     .fill="ocupado"
-      ) %>%
-      select(-n_se) %>%
-      filter(AAMM!="ocupado") %>%
-      dplyr::ungroup() %>%
-      
-      dplyr::group_by(pos_ocup2) %>%
-      dplyr::mutate(
-        media_tb11_2 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>%
-      select(-n) %>%
-      filter(!is.na(media_tb11_2)) %>%
-      dplyr::ungroup() %>%
-      
-      tidyr::spread(pos_ocup2, media_tb11_2) %>%
-      data.frame()})
-  
-  
-  
-  ### Tab12 Final
-  
-  tb11m <- reactive({ tb11_p1m() %>% 
-      left_join(tb11_p2m(), by=c("AAMM")) %>% 
-      mutate(setor_privado=(ass_priv_c_cart+ass_priv_s_cart)) %>% 
-      data.frame()})
-  
-  
-  ##
-  tb12 <- reactive({ tb11m() %>% 
-      dplyr::mutate(perc_ocupado=100.0,
-                    perc_assalariado = round(assalariado/ocupado*100,1),
-                    perc_setor_privado = round(setor_privado/ocupado*100,1),
-                    perc_ass_priv_c_cart = round(ass_priv_c_cart/ocupado*100,1),
-                    perc_ass_priv_s_cart = round(ass_priv_s_cart/ocupado*100,1),
-                    perc_ass_pub = round(ass_pub/ocupado*100,1),
-                    perc_autonomo = round(autonomo/ocupado*100,1),
-                    perc_empreg_domestico = round(empreg_domestico/ocupado*100,1)) %>% 
-      
-      select(AAMM,perc_ocupado, perc_assalariado, perc_setor_privado, perc_ass_priv_c_cart, perc_ass_priv_s_cart, perc_ass_pub, 
-             perc_autonomo, perc_empreg_domestico) %>% 
-      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-      
-      data.frame()
-  })
-  
-  
-  
-  ######################################################################################
-  
-  
-  
-  ##################
-  ###### TABELA 13
-  
-  
-  #### Distribuicao dos Ocupados, por Atributos Pessoais e Trabalho Anterior
-  
-  ### Sexo
-  tb13g1 <- reactive({ 
-    sample.ped() %>%
-      srvyr::filter(SIT==4) %>% 
-      srvyr::filter(C050>=14) %>%
-      
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%  
-      
-      srvyr::group_by(AAMM,sexo) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=F),
-                     .fill="total"
-      ) %>% 
-      select(-n_se) %>%
-      filter(AAMM!="total") %>%
-      dplyr::ungroup() %>%
-      
-      dplyr::group_by(sexo) %>%
-      dplyr::mutate(
-        media_tb13 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="total")) %>%
-      filter(!is.na(sexo)) %>%
-      select(-c(n)) %>% 
-      tidyr::spread(sexo, media_tb13) %>% 
-      dplyr::mutate(perc_hom=round(100*Homens/total,1),
-                    perc_mul=round(100*Mulheres/total,1)) %>% 
-      data.frame()
-  })
-  
-  
-  
-  ### Raca/cor
-  tb13g2 <- reactive({
-    sample.ped() %>%
-      srvyr::filter(SIT==4) %>% 
-      srvyr::filter(C050>=14) %>%
-      
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%  
-      
-      filter(!is.na(raca)) %>%
-      srvyr::group_by(AAMM,raca) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=F),
-                     .fill="total"
-      ) %>% 
-      select(-n_se) %>%
-      filter(AAMM!="total") %>%
-      dplyr::ungroup() %>%
-      
-      dplyr::group_by(raca) %>%
-      dplyr::mutate(
-        media_tb13 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="total")) %>%
-      select(-c(n)) %>% 
-      tidyr::spread(raca, media_tb13) %>%
-      dplyr::mutate(perc_negro=round(100*negro/total,1),
-                    perc_nao_negro=round(100*nao_negro/total,1)) %>%
-      data.frame()
-  })
-  
-  
-  
-  ## Posicao domicilio - chefe e nao chefe
-  tb13g3 <- reactive({
-    sample.ped() %>%
-      srvyr::filter(SIT==4) %>% 
-      srvyr::filter(C050>=14) %>%
-      
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%  
-      
-      srvyr::group_by(AAMM,pos_dom) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=F),
-                     .fill="total"
-      ) %>%
-      select(-n_se) %>%
-      filter(AAMM!="total") %>%
-      dplyr::ungroup() %>%
-      
-      dplyr::group_by(pos_dom) %>%
-      dplyr::mutate(
-        media_tb13 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="total")) %>%
-      filter(!is.na(pos_dom)) %>%
-      select(-c(n)) %>% 
-      tidyr::spread(pos_dom, media_tb13) %>%
-      dplyr::mutate(perc_chefe=round(100*chefe/total,1),
-                    perc_demais_membros=round(100*demais_membros/total,1)) %>%
-      data.frame()
-  })
-  
-  
-  
-  ### Faixa Etaria
-  tb13g4g <- reactive({
-    sample.ped() %>%
-      srvyr::filter(SIT==4) %>% 
-      srvyr::filter(C050>=14) %>%
-      
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%
-      
-      srvyr::group_by(AAMM,fxetaria) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=F),
-                     .fill="total"
-      ) %>% 
-      select(-n_se) %>%
-      filter(AAMM!="total") %>%
-      dplyr::ungroup() %>%
-      data.frame()})
-  
-  
-  tb13g4_fxet_14e15 <- reactive({ data.frame(AAMM="202004", fxetaria="fxetaria_14a15anos", n=0)})
-  tb13g4gj <- reactive({ tb13g4g() %>% 
-      full_join(tb13g4_fxet_14e15()) %>% 
-      arrange(AAMM, fxetaria) %>% 
-      data.frame()})
-  
-  
-  tb13g4 <- reactive({ tb13g4gj() %>% 
-      dplyr::group_by(fxetaria) %>%
-      dplyr::mutate(
-        media_tb13 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="total")) %>%
-      filter(!is.na(fxetaria)) %>%
-      select(-c(n)) %>% 
-      tidyr::spread(fxetaria, media_tb13) %>%
-      dplyr::mutate(
-        perc_fxetaria_14a15anos = round(fxetaria_14a15anos/total*100,1),
-        perc_fxetaria_16a24anos = round(fxetaria_16a24anos/total*100,1),
-        perc_fxetaria_25a39anos = round(fxetaria_25a39anos/total*100,1),
-        perc_fxetaria_40a49anos = round(fxetaria_40a49anos/total*100,1),
-        perc_fxetaria_50a59anos = round(fxetaria_50a59anos/total*100,1),
-        perc_fxetaria_60anosemais = round(fxetaria_60anosemais/total*100,1)) %>% 
-      data.frame()
-  })
-  
-  
-  
-  ### Trabalho Anterior
-  tb13g5 <- reactive({
-    sample.ped() %>%
-      srvyr::filter(SIT==4) %>% 
-      srvyr::filter(C050>=14) %>%
-      
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%
-      
-      srvyr::group_by(AAMM,experiencia) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=F),
-                     .fill="total"
-      ) %>% 
-      select(-n_se) %>%
-      filter(AAMM!="total") %>%
-      dplyr::ungroup() %>%
-      
-      dplyr::group_by(experiencia) %>%
-      dplyr::mutate(
-        media_tb13 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="total")) %>%
-      filter(!is.na(experiencia)) %>%
-      select(-c(n)) %>% 
-      tidyr::spread(experiencia, media_tb13) %>%
-      dplyr::mutate(perc_sim=round(100*sim/total,1),
-                    perc_nao=round(100*nao/total,1)) %>%
-      
-      data.frame()
-  })
-  
-  
-  
-  ### Tab13 Final
-  
-  tb13 <- reactive({ tb13g1() %>% 
-      left_join(tb13g2(), by=c("AAMM")) %>% 
-      left_join(tb13g3(), by=c("AAMM")) %>% 
-      left_join(tb13g4(), by=c("AAMM")) %>% 
-      left_join(tb13g5(), by=c("AAMM")) %>% 
-      
-      filter(!is.na(perc_hom)) %>%
-      dplyr::mutate(perc_total=100.0) %>% 
-      select(AAMM, perc_total, perc_hom, perc_mul, perc_fxetaria_14a15anos, perc_fxetaria_16a24anos, perc_fxetaria_25a39anos, 
-             perc_fxetaria_40a49anos, perc_fxetaria_50a59anos, perc_fxetaria_60anosemais,
-             perc_chefe, perc_demais_membros, perc_negro, perc_nao_negro, perc_sim, perc_nao) %>%
-      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-      
-      data.frame()
-  })
-  
-  
-  
-  ######################################################################################
-  
-  
-  
-  ##################
-  ###### TABELA 19 
-  
-  #### Distribuicao da Populacao Inativa de 14 Anos e Mais, por Atributos Pessoais e Trabalho Anterior
-  
-  ### Sexo
-  tb19g1 <- reactive({ 
-    sample.ped() %>%
-      srvyr::filter(SIT %in% c(5,6)) %>% 
-      srvyr::filter(C050>=14) %>%
-      
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%  
-      
-      srvyr::group_by(AAMM,sexo) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=F),
-                     .fill="total"
-      ) %>% 
-      select(-n_se) %>%
-      filter(AAMM!="total") %>%
-      dplyr::ungroup() %>%
-      
-      dplyr::group_by(sexo) %>%
-      dplyr::mutate(
-        media_tb19 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="total")) %>%
-      filter(!is.na(sexo)) %>%
-      select(-c(n)) %>% 
-      tidyr::spread(sexo, media_tb19) %>% 
-      dplyr::mutate(perc_hom=round(100*Homens/total,1),
-                    perc_mul=round(100*Mulheres/total,1)) %>% 
-      data.frame()
-  })
-  
-  
-  ### Raca/cor
-  tb19g2 <- reactive({
-    sample.ped() %>%
-      srvyr::filter(SIT %in% c(5,6)) %>% 
-      srvyr::filter(C050>=14) %>%
-      
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%  
-      
-      filter(!is.na(raca)) %>%
-      srvyr::group_by(AAMM,raca) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=F),
-                     .fill="total"
-      ) %>% 
-      select(-n_se) %>%
-      filter(AAMM!="total") %>%
-      dplyr::ungroup() %>%
-      
-      dplyr::group_by(raca) %>%
-      dplyr::mutate(
-        media_tb19 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="total")) %>%
-      select(-c(n)) %>% 
-      tidyr::spread(raca, media_tb19) %>%
-      dplyr::mutate(perc_negro=round(100*negro/total,1),
-                    perc_nao_negro=round(100*nao_negro/total,1)) %>%
-      data.frame()
-  })
-  
-  
-  
-  ## Posicao domicilio - chefe e nao chefe
-  tb19g3 <- reactive({
-    sample.ped() %>%
-      srvyr::filter(SIT %in% c(5,6)) %>% 
-      srvyr::filter(C050>=14) %>%
-      
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%  
-      
-      srvyr::group_by(AAMM,pos_dom) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=F),
-                     .fill="total"
-      ) %>%
-      select(-n_se) %>%
-      filter(AAMM!="total") %>%
-      dplyr::ungroup() %>%
-      
-      dplyr::group_by(pos_dom) %>%
-      dplyr::mutate(
-        media_tb19 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="total")) %>%
-      filter(!is.na(pos_dom)) %>%
-      select(-c(n)) %>% 
-      tidyr::spread(pos_dom, media_tb19) %>%
-      dplyr::mutate(perc_chefe=round(100*chefe/total,1),
-                    perc_demais_membros=round(100*demais_membros/total,1)) %>%
-      data.frame()
-  })
-  
-  
-  
-  ### Faixa Etaria
-  tb19g4 <- reactive({
-    sample.ped() %>%
-      srvyr::filter(SIT %in% c(5,6)) %>% 
-      srvyr::filter(C050>=14) %>%
-      
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%
-      
-      srvyr::group_by(AAMM,fxetaria) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=F),
-                     .fill="total"
-      ) %>% 
-      select(-n_se) %>%
-      filter(AAMM!="total") %>%
-      dplyr::ungroup() %>%
-      
-      dplyr::group_by(fxetaria) %>%
-      dplyr::mutate(
-        media_tb19 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="total")) %>%
-      filter(!is.na(n)) %>%
-      select(-c(n)) %>% 
-      tidyr::spread(fxetaria, media_tb19) %>%
-      dplyr::mutate(
-        perc_fxetaria_14a15anos = round(fxetaria_14a15anos/total*100,1),
-        perc_fxetaria_16a24anos = round(fxetaria_16a24anos/total*100,1),
-        perc_fxetaria_25a39anos = round(fxetaria_25a39anos/total*100,1),
-        perc_fxetaria_40a49anos = round(fxetaria_40a49anos/total*100,1),
-        perc_fxetaria_50a59anos = round(fxetaria_50a59anos/total*100,1),
-        perc_fxetaria_60anosemais = round(fxetaria_60anosemais/total*100,1)) %>% 
-      data.frame()})
-  
-  
-  
-  ### Trabalho Anterior
-  tb19g5 <- reactive({
-    sample.ped() %>%
-      srvyr::filter(SIT %in% c(5,6)) %>% 
-      srvyr::filter(C050>=14) %>%
-      
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%
-      
-      srvyr::group_by(AAMM,experiencia) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=F),
-                     .fill="total"
-      ) %>% 
-      select(-n_se) %>%
-      filter(AAMM!="total") %>%
-      dplyr::ungroup() %>%
-      
-      dplyr::group_by(experiencia) %>%
-      dplyr::mutate(
-        media_tb19 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="total")) %>%
-      filter(!is.na(experiencia)) %>%
-      select(-c(n)) %>% 
-      tidyr::spread(experiencia, media_tb19) %>%
-      dplyr::mutate(perc_sim=round(100*sim/total,1),
-                    perc_nao=round(100*nao/total,1)) %>%
-      
-      data.frame()
-  })
-  
-  
-  
-  ### Tab19 Final
-  
-  tb19 <- reactive({ tb19g1() %>% 
-      left_join(tb19g2(), by=c("AAMM")) %>% 
-      left_join(tb19g3(), by=c("AAMM")) %>% 
-      left_join(tb19g4(), by=c("AAMM")) %>% 
-      left_join(tb19g5(), by=c("AAMM")) %>% 
-      
-      filter(!is.na(perc_hom)) %>%
-      
-      dplyr::mutate(perc_total=100.0) %>% 
-      select(AAMM, perc_total, perc_hom, perc_mul, perc_fxetaria_14a15anos, perc_fxetaria_16a24anos, perc_fxetaria_25a39anos, 
-             perc_fxetaria_40a49anos, perc_fxetaria_50a59anos, perc_fxetaria_60anosemais,
-             perc_chefe, perc_demais_membros, perc_negro, perc_nao_negro, perc_sim, perc_nao) %>%
-      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-      
-      data.frame()
-  })
-  
-  
-  
-  ######################################################################################
-  
-  
-  
-  ##################
-  ###### TABELA 20 
-  
-  
-  #### Distribuicao da Populacao Inativa de 14 Anos e Mais, com Experiencia Anterior de Trabalho, por Faixa de Tempo em que Perdeu ou Deixou o ultimo Trabalho
-  tb20 <- reactive({ 
-    sample.ped() %>%
-      srvyr::filter(SIT %in% c(5,6)) %>% 
-      srvyr::filter(C050>=14) %>%
-      
-      srvyr::mutate(count=1,
-                    AAMM=as.character(AAMM)) %>%  
-      
-      srvyr::filter(tperd_inat_nome!="Missing") %>% 
-      srvyr::group_by(AAMM,tperd_inat_nome) %>%
-      
-      srvyr::cascade(n=survey_total(count,na.rm=F),
-                     .fill="total"
-      ) %>% 
-      select(-n_se) %>%
-      filter(AAMM!="total") %>%
-      dplyr::ungroup() %>%
-      
-      dplyr::group_by(tperd_inat_nome) %>%
-      dplyr::mutate(
-        media_tb20 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="total")) %>%
-      filter(!is.na(media_tb20)) %>%
-      select(-c(n)) %>% 
-      tidyr::spread(tperd_inat_nome, media_tb20) %>% 
-      dplyr::mutate(perc_total=100.0,
-                    perc_ate6meses=round(Ate6meses/total*100,1),
-                    perc_maisde6mesesa1ano=round(Maisde6mesesa1ano/total*100,1),
-                    perc_maisde1a2anos=round(Maisde1a2anos/total*100,1),
-                    perc_maisde2a3anos=round(Maisde2a3anos/total*100,1),
-                    perc_maisde3a5anos=round(Maisde3a5anos/total*100,1),
-                    perc_maisde5anos=round(Maisde5anos/total*100,1)) %>% 
-      select(AAMM,perc_total:perc_maisde5anos) %>% 
-      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-      data.frame()
-  })
-  
-  
-  
-  ######################################################################################
-  
-  
-  
-  ##################
-  ###### TABELA 21 
-  
-  
-  #### Distribuicao da Populacao Inativa de 14 Anos e Mais,  por Principal Condicao de Atividade 
-  tb21 <- reactive({ 
-    sample.ped() %>%
-      srvyr::filter(SIT %in% c(5,6)) %>% 
-      srvyr::filter(C050>=14) %>%
-      
-      srvyr::mutate(count=1,
-                    AAMM=as.character(AAMM)) %>%  
-      
-      srvyr::filter(cond_ativg!=100) %>% 
-      srvyr::group_by(AAMM,cond_ativ) %>%
-      
-      srvyr::cascade(n=survey_total(count,na.rm=F),
-                     .fill="total"
-      ) %>% 
-      select(-n_se) %>%
-      filter(AAMM!="total") %>%
-      dplyr::ungroup() %>%
-      
-      dplyr::group_by(cond_ativ) %>%
-      dplyr::mutate(
-        media_tb21 = rollmean(x = n, 3, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="total")) %>%
-      filter(!is.na(media_tb21)) %>%
-      select(-c(n)) %>% 
-      tidyr::spread(cond_ativ, media_tb21) %>% 
-      dplyr::mutate(perc_total=100.0,
-                    perc_aposent=round(Aposentado/total*100,1),
-                    perc_estud=round(Estudante/total*100,1),
-                    perc_dedi_afazerdomest=round(Dedicadoafazeresdomesticos/total*100,1),
-                    perc_lic_saude=round(Licenciadoporsaude/total*100,1),
-                    perc_outros=round(Outros/total*100,1)) %>% 
-      select(AAMM,perc_total:perc_outros) %>% 
-      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>% 
-      data.frame()
-  })
-  
-  
-  
-  ######################################################################################
-  
-  
-  
-  ##################
-  ###### TAB TEXTO DO ANEXO
-  
-  
-  #### Taxa de Desemprego Total, por Grupos de Regioes Administrativas
-  tb_texto_p1 <- reactive({
-    sample.ped() %>%
-      srvyr::filter(C050>=14) %>%
-      srvyr::filter(!(SIT %in% c(0,10))) %>%
-      
-      srvyr::mutate(
-        count=1,
-        AAMM=as.character(AAMM)) %>%
-      srvyr::group_by(AAMM,sit,grupo) %>%
-      srvyr::cascade(n=survey_total(count,na.rm=F),
-                     .fill="PIA"
-      ) %>% 
-      select(-n_se) %>% 
-      dplyr::ungroup() %>%
-      dplyr::group_by(sit, grupo) %>%
-      dplyr::mutate(
-        media_tbtexto = rollmean(x = n, 6, align = "right", fill = NA)/1000) %>% 
-      filter(!(AAMM=="PIA")) %>%
-      filter(grupo!="PIA") %>% 
-      filter(!(is.na(media_tbtexto))) %>%
-      select(-n) %>%
-      
-      dplyr::ungroup() %>%
-      data.frame()
-  })
-  
-  
-  ## Fazer taxa de desemprego total
-  tb_texto_p2 <- reactive({
-    tb_texto_p1() %>% 
-      dplyr::group_by(AAMM, sit) %>%
-      dplyr::summarise(media_tbtexto=sum(media_tbtexto,na.rm=T)) %>% 
-      tidyr::spread(sit, media_tbtexto) %>%
-      dplyr::mutate(
-        PEA = Desempregado+Ocupado,
-        tx.desemp = Desempregado/PEA*100) %>%
-      select(AAMM, tx.desemp) %>%
-      rename(Total=tx.desemp) %>%
-      data.frame()
-  })
-  
-  
-  
-  ### Tab texto Final
-  
-  tb_texto <- reactive({ 
-    tb_texto_p1() %>% 
-      tidyr::spread(sit, media_tbtexto) %>%
-      dplyr::mutate(
-        PEA = Desempregado+Ocupado,
-        tx.desemp = round(Desempregado/PEA*100,1)) %>% 
-      select(AAMM, grupo, tx.desemp) %>% 
-      
-      tidyr::spread(grupo, tx.desemp) %>% 
-      
-      left_join(tb_texto_p2(), by=c("AAMM")) %>% 
-      dplyr::mutate(Total=round(Total,1)) %>% 
-      
-      select(AAMM, Total, Grupo_1, Grupo_2, Grupo_3, Grupo_4) %>% 
-      filter(!(is.na(Total))) %>%  
-      mutate(mes_ano = my(str_c(str_sub(AAMM,5,6),"-",str_sub(AAMM,1,4)))) %>%
-      data.frame()
-  })
-  
-  
-  ######################################################################################
-  
-  
-  
-  ##################
-  ###### TABELA 1
-  
-  
-  #### Estimativas da Populacao em Idade Ativa de 14 Anos e Mais e Taxas de Participacao e de Desemprego Total
+  ),
   
   # Tabela 1
-  output$PIA <- renderValueBox({
-    valueBox(
-      {tb1()$PIA[tb1()$AAMM == input$select_mes]}, "PIA",color = "blue"
-    )})
-  
-  output$Ind_PIA <- renderValueBox({
-    valueBox(
-      round(tb1()$ind_pia[tb1()$AAMM == input$select_mes],1), "Indicador PIA",color = "blue"
-    )
-  })
-  
-  output$PEA <- renderValueBox({
-    valueBox(
-      tb1()$PEA[tb1()$AAMM == input$select_mes], "PEA",color = "blue"
-    )
-  })
-  
-  output$Ind_PEA <- renderValueBox({
-    valueBox(
-      round(tb1()$ind_pea[tb1()$AAMM == input$select_mes],1), "Indicador PEA",color = "blue"
-    )
-  })
-  
-  output$Ocupado <- renderValueBox({
-    valueBox(
-      tb1()$Ocupado[tb1()$AAMM == input$select_mes], "Ocupados",color = "blue"
-    )
-  })
-  
-  output$Ind_Ocupado <- renderValueBox({
-    valueBox(
-      round(tb1()$ind_ocup[tb1()$AAMM == input$select_mes],1), "Indicador Ocupados",color = "blue"
-    )
-  })
-  
-  output$Desempregado <- renderValueBox({
-    valueBox(
-      tb1()$Desempregado[tb1()$AAMM == input$select_mes], "Desempregados",color = "blue"
-    )
-  })
-  
-  output$Ind_Desempregado <- renderValueBox({
-    valueBox(
-      round(tb1()$ind_desemp[tb1()$AAMM == input$select_mes],1), "Indicador Desempregados",color = "blue"
-    )
-  })
-  
-  output$Inativo <- renderValueBox({
-    valueBox(
-      tb1()$Inativo[tb1()$AAMM == input$select_mes], "Inativo",color = "blue"
-    )
-  })
-  
-  output$Ind_Inativo <- renderValueBox({
-    valueBox(
-      round(tb1()$ind_inat[tb1()$AAMM == input$select_mes],1), "Indicador Inativos",color = "blue"
-    )
-  })  
-  
-  output$Total <- renderValueBox({
-    valueBox(
-      tb1()$pop_total[tb1()$AAMM == input$select_mes], "População Total",color = "blue"
-    )
-  })
-  
-  output$serie_temporal_tb1 <- renderPlotly({
-    plot <- plot.serie(tb1(), "mes_ano" ,input$select_indicador_tb1,"Ano-Mês",input$select_indicador_tb1)
-    ggplotly(plot)
-  })
-  # Tabela 2
-  output$Desemp_Total <- renderValueBox({
-    valueBox(
-      tb2()$total[tb2()$AAMM == input$select_mes], "Desemprego Total",color = "blue"
-    )
-  })
-  
-  output$Tx_Desemp <- renderValueBox({
-    valueBox(
-      round(tb2()$tx.desemp[tb2()$AAMM == input$select_mes],1), "Taxa de Desemprego",color = "blue"
-    )
-  })
-  
-  output$Desemp_Aberto <- renderValueBox({
-    valueBox(
-      tb2()$Desemp_Aberto[tb2()$AAMM == input$select_mes], "Desemprego Aberto",color = "blue"
-    )
-  })
-  
-  output$Tx_Desemp_Aberto <- renderValueBox({
-    valueBox(
-      round(tb2()$tx.desemp.aberto[tb2()$AAMM == input$select_mes],1), "Taxa de Desemprego Aberto",color = "blue"
-    )
-  })
-  
-  output$Desemp_Oculto <- renderValueBox({
-    valueBox(
-      tb2()$Desemp_Oculto[tb2()$AAMM == input$select_mes], "Desemprego Oculto",color = "blue"
-    )
-  })
-  
-  output$Tx_Desemp_Oculto <- renderValueBox({
-    valueBox(
-      round(tb2()$tx.desemp.oculto[tb2()$AAMM == input$select_mes],1), "Taxa de Desemprego Oculto",color = "blue"
-    )
-  })
-  
-  output$Desemp_Oculto_Precario <- renderValueBox({
-    valueBox(
-      tb2()$Desemp_Oculto_Precario[tb2()$AAMM == input$select_mes], "Desemprego Oculto Precário",color = "blue"
-    )
-  })
-  
-  output$Tx_Desemp_Oculto_Precario <- renderValueBox({
-    valueBox(
-      round(tb2()$tx.desemp.oculto.precario[tb2()$AAMM == input$select_mes],1), "Taxa de Desemprego Oculto Precário",color = "blue"
-    )
-  })
-  
-  output$Desemp_Oculto_Desalento <- renderValueBox({
-    valueBox(
-      tb2()$Desemp_Oculto_Desalento[tb2()$AAMM == input$select_mes], "Desemprego Oculto Desalento",color = "blue"
-    )
-  })
-  
-  output$Tx_Desemp_Oculto_Desalento <- renderValueBox({
-    valueBox(
-      round(tb2()$tx.desemp.oculto.desalento[tb2()$AAMM == input$select_mes],1), "Taxa de Desemprego Oculto Desalento",color = "blue"
-    )
-  })
-  
-  output$serie_temporal_tb2 <- renderPlotly({
-    plot <- plot.serie(tb2(), "mes_ano", input$select_indicador_tb2,"Ano-Mês",input$select_indicador_tb2)
-    ggplotly(plot)
-  })
-  # Tabela 3
-  output$Tx_Desemp_Total <- renderValueBox({
-    valueBox(
-      round(tb3()$Total[tb3()$AAMM == input$select_mes],1), "Taxa de Desemprego Total",color = "blue"
-    )
-  })
-  output$Grupo_1 <- renderValueBox({
-    valueBox(
-      round(tb3()$Grupo_1[tb3()$AAMM == input$select_mes],1), "Grupo 1",color = "blue"
-    )
-  })
-  output$Grupo_2 <- renderValueBox({
-    valueBox(
-      round(tb3()$Grupo_2[tb3()$AAMM == input$select_mes],1), "Grupo 2",color = "blue"
-    )
-  })
-  output$Grupo_3 <- renderValueBox({
-    valueBox(
-      round(tb3()$Grupo_3[tb3()$AAMM == input$select_mes],1), "Grupo 3",color = "blue"
-    )
-  })
-  output$Grupo_4 <- renderValueBox({
-    valueBox(
-      round(tb3()$Grupo_4[tb3()$AAMM == input$select_mes],1), "Grupo 4",color = "blue"
-    )
-  })
-  output$serie_temporal_tb3 <- renderPlotly({
-    plot <- plot.serie(tb3(), "mes_ano", input$select_indicador_tb3,"Ano-Mês",input$select_indicador_tb3)
-    ggplotly(plot)
-  })
-  # Tabela 4
-  output$Tx_Desemp_Total_2 <- renderValueBox({
-    valueBox(
-      round(tb4()$Total[tb4()$AAMM == input$select_mes],1), "Taxa de Desemprego Total",color = "blue"
-    )
-  })
-  output$Tx_Desemp_Homens <- renderValueBox({
-    valueBox(
-      round(tb4()$Homens[tb4()$AAMM == input$select_mes],1), "Taxa de Desemprego Homens",color = "blue"
-    )
-  })
-  output$Tx_Desemp_Mulheres <- renderValueBox({
-    valueBox(
-      round(tb4()$Mulheres[tb4()$AAMM == input$select_mes],1), "Taxa de Desemprego Mulheres",color = "blue"
-    )
-  })
-  output$Tx_Desemp_14_e_15 <- renderValueBox({
-    valueBox(
-      round(tb4()$fxetaria_14a15anos[tb4()$AAMM == input$select_mes],1), "Taxa de Desemprego 14 e 15 anos",color = "blue"
-    )
-  })
-  output$Tx_Desemp_16_a_24 <- renderValueBox({
-    valueBox(
-      round(tb4()$fxetaria_16a24anos[tb4()$AAMM == input$select_mes],1), "Taxa de Desemprego 16 a 24 anos",color = "blue"
-    )
-  })
-  output$Tx_Desemp_25_a_39 <- renderValueBox({
-    valueBox(
-      round(tb4()$fxetaria_25a39anos[tb4()$AAMM == input$select_mes],1), "Taxa de Desemprego 25 a 39 anos",color = "blue"
-    )
-  })
-  output$Tx_Desemp_40_a_49 <- renderValueBox({
-    valueBox(
-      round(tb4()$fxetaria_40a49anos[tb4()$AAMM == input$select_mes],1), "Taxa de Desemprego 40 a 49 anos",color = "blue"
-    )
-  })
-  output$Tx_Desemp_50_a_59 <- renderValueBox({
-    valueBox(
-      round(tb4()$fxetaria_50a59anos[tb4()$AAMM == input$select_mes],1), "Taxa de Desemprego 50 a 59 anos",color = "blue"
-    )
-  })
-  output$Tx_Desemp_60 <- renderValueBox({
-    valueBox(
-      round(tb4()$fxetaria_60anosemais[tb4()$AAMM == input$select_mes],1), "Taxa de Desemprego 60 anos e mais",color = "blue"
-    )
-  })
-  output$Tx_Desemp_Chefe <- renderValueBox({
-    valueBox(
-      round(tb4()$chefe[tb4()$AAMM == input$select_mes],1), "Taxa de Desemprego Chefe",color = "blue"
-    )
-  })
-  output$Tx_Desemp_Demais_membros <- renderValueBox({
-    valueBox(
-      round(tb4()$demais_membros[tb4()$AAMM == input$select_mes],1), "Taxa de Desemprego Demais Membros",color = "blue"
-    )
-  })
-  output$Tx_Desemp_Negros <- renderValueBox({
-    valueBox(
-      round(tb4()$negro[tb4()$AAMM == input$select_mes],1), "Taxa de Desemprego Negros",color = "blue"
-    )
-  })
-  output$Tx_Desemp_Nao_Negros <- renderValueBox({
-    valueBox(
-      round(tb4()$nao_negro[tb4()$AAMM == input$select_mes],1), "Taxa de Desemprego Não-Negros",color = "blue"
-    )
-  })
-  output$Tx_Desemp_Trab_Anteriro_Sim <- renderValueBox({
-    valueBox(
-      round(tb4()$trab_anterior_sim[tb4()$AAMM == input$select_mes],1), "Taxa de Desemprego Trabalho Anterior Sim",color = "blue"
-    )
-  })
-  output$Tx_Desemp_Trab_Anteriro_Nao <- renderValueBox({
-    valueBox(
-      round(tb4()$trab_anterior_nao[tb4()$AAMM == input$select_mes],1), "Taxa de Desemprego Trabalho Anterior Não",color = "blue"
-    )
-  })
-  output$serie_temporal_tb4 <- renderPlotly({
-    plot <- plot.serie(tb4(), "mes_ano", input$select_indicador_tb4,"Ano-Mês",input$select_indicador_tb4)
-    ggplotly(plot)
-  })
-  # Tabela 5
-  output$Tx_Particip_Total <- renderValueBox({
-    valueBox(
-      round(tb5()$Total[tb5()$AAMM == input$select_mes],1), "Taxa de Participação Total",color = "blue"
-    )
-  })
-  output$Tx_Particip_Homens <- renderValueBox({
-    valueBox(
-      round(tb5()$Homens[tb5()$AAMM == input$select_mes],1), "Taxa de Participação Homens",color = "blue"
-    )
-  })
-  output$Tx_Particip_Mulheres <- renderValueBox({
-    valueBox(
-      round(tb5()$Mulheres[tb5()$AAMM == input$select_mes],1), "Taxa de Participação Mulheres",color = "blue"
-    )
-  })
-  output$Tx_Particip_14_e_15 <- renderValueBox({
-    valueBox(
-      round(tb5()$fxetaria_14a15anos[tb5()$AAMM == input$select_mes],1), "Taxa de Participação 14 e 15 anos",color = "blue"
-    )
-  })
-  output$Tx_Particip_16_a_24 <- renderValueBox({
-    valueBox(
-      round(tb5()$fxetaria_16a24anos[tb5()$AAMM == input$select_mes],1), "Taxa de Participação 16 a 24 anos",color = "blue"
-    )
-  })
-  output$Tx_Particip_25_a_39 <- renderValueBox({
-    valueBox(
-      round(tb5()$fxetaria_25a39anos[tb5()$AAMM == input$select_mes],1), "Taxa de Participação 25 a 39 anos",color = "blue"
-    )
-  })
-  output$Tx_Particip_40_a_49 <- renderValueBox({
-    valueBox(
-      round(tb5()$fxetaria_40a49anos[tb5()$AAMM == input$select_mes],1), "Taxa de Participação 40 a 49 anos",color = "blue"
-    )
-  })
-  output$Tx_Particip_50_a_59 <- renderValueBox({
-    valueBox(
-      round(tb5()$fxetaria_50a59anos[tb5()$AAMM == input$select_mes],1), "Taxa de Participação 50 a 59 anos",color = "blue"
-    )
-  })
-  output$Tx_Particip_60 <- renderValueBox({
-    valueBox(
-      round(tb5()$fxetaria_60anosemais[tb5()$AAMM == input$select_mes],1), "Taxa de Participação 60 anos e mais",color = "blue"
-    )
-  })
-  output$Tx_Particip_Chefe <- renderValueBox({
-    valueBox(
-      round(tb5()$chefe[tb5()$AAMM == input$select_mes],1), "Taxa de Participação Chefe",color = "blue"
-    )
-  })
-  output$Tx_Particip_Demais_membros <- renderValueBox({
-    valueBox(
-      round(tb5()$demais_membros[tb5()$AAMM == input$select_mes],1), "Taxa de Participação Demais Membros",color = "blue"
-    )
-  })
-  output$Tx_Particip_Negros <- renderValueBox({
-    valueBox(
-      round(tb5()$negro[tb5()$AAMM == input$select_mes],1), "Taxa de Participação Negros",color = "blue"
-    )
-  })
-  output$Tx_Particip_Nao_Negros <- renderValueBox({
-    valueBox(
-      round(tb5()$nao_negro[tb5()$AAMM == input$select_mes],1), "Taxa de Participação Não-Negros",color = "blue"
-    )
-  })
-  output$serie_temporal_tb5 <- renderPlotly({
-    plot <- plot.serie(tb5(), "mes_ano", input$select_indicador_tb5,"Ano-Mês",input$select_indicador_tb5)
-    ggplotly(plot)
-  })
-  # Tabela 6
-  output$Dist_Desemp_Total <- renderValueBox({
-    valueBox(
-      round(tb6()$perc_Total[tb6()$AAMM == input$select_mes],1), "Distribuição de Desemprego Total",color = "blue"
-    )
-  })
-  output$Dist_Desemp_Homens <- renderValueBox({
-    valueBox(
-      round(tb6()$perc_Homens[tb6()$AAMM == input$select_mes],1), "Distribuição de Desemprego Homens",color = "blue"
-    )
-  })
-  output$Dist_Desemp_Mulheres <- renderValueBox({
-    valueBox(
-      round(tb6()$perc_Mulheres[tb6()$AAMM == input$select_mes],1), "Distribuição de Desemprego Mulheres",color = "blue"
-    )
-  })
-  output$Dist_Desemp_14_e_15 <- renderValueBox({
-    valueBox(
-      round(tb6()$perc_fxetaria_14a15anos[tb6()$AAMM == input$select_mes],1), "Distribuição de Desemprego 14 e 15 anos",color = "blue"
-    )
-  })
-  output$Dist_Desemp_16_a_24 <- renderValueBox({
-    valueBox(
-      round(tb6()$perc_fxetaria_16a24anos[tb6()$AAMM == input$select_mes],1), "Distribuição de Desemprego 16 a 24 anos",color = "blue"
-    )
-  })
-  output$Dist_Desemp_25_a_39 <- renderValueBox({
-    valueBox(
-      round(tb6()$perc_fxetaria_25a39anos[tb6()$AAMM == input$select_mes],1), "Distribuição de Desemprego 25 a 39 anos",color = "blue"
-    )
-  })
-  output$Dist_Desemp_40_a_49 <- renderValueBox({
-    valueBox(
-      round(tb6()$perc_fxetaria_40a49anos[tb6()$AAMM == input$select_mes],1), "Distribuição de Desemprego 40 a 49 anos",color = "blue"
-    )
-  })
-  output$Dist_Desemp_50_a_59 <- renderValueBox({
-    valueBox(
-      round(tb6()$perc_fxetaria_50a59anos[tb6()$AAMM == input$select_mes],1), "Distribuição de Desemprego 50 a 59 anos",color = "blue"
-    )
-  })
-  output$Dist_Desemp_60 <- renderValueBox({
-    valueBox(
-      round(tb6()$perc_fxetaria_60anosemais[tb6()$AAMM == input$select_mes],1), "Distribuição de Desemprego 60 anos e mais",color = "blue"
-    )
-  })
-  output$Dist_Desemp_Chefe <- renderValueBox({
-    valueBox(
-      round(tb6()$perc_chefe[tb6()$AAMM == input$select_mes],1), "Distribuição de Desemprego Chefe",color = "blue"
-    )
-  })
-  output$Dist_Desemp_Demais_membros <- renderValueBox({
-    valueBox(
-      round(tb6()$perc_demais_membros[tb6()$AAMM == input$select_mes],1), "Distribuição de Desemprego Demais Membros",color = "blue"
-    )
-  })
-  output$Dist_Desemp_Negros <- renderValueBox({
-    valueBox(
-      round(tb6()$perc_negro[tb6()$AAMM == input$select_mes],1), "Distribuição de Desemprego Negros",color = "blue"
-    )
-  })
-  output$Dist_Desemp_Nao_Negros <- renderValueBox({
-    valueBox(
-      round(tb6()$perc_nao_negro[tb6()$AAMM == input$select_mes],1), "Distribuição de Desemprego Não-Negros",color = "blue"
-    )
-  })
-  output$Dist_Desemp_Trab_Anteriro_Sim <- renderValueBox({
-    valueBox(
-      round(tb6()$perc_trab_anterior_sim[tb6()$AAMM == input$select_mes],1), "Distribuição de Desemprego Trabalho Anterior Sim",color = "blue"
-    )
-  })
-  output$Dist_Desemp_Trab_Anteriro_Nao <- renderValueBox({
-    valueBox(
-      round(tb6()$perc_trab_anterior_nao[tb6()$AAMM == input$select_mes],1), "Distribuição de Desemprego Trabalho Anterior Não",color = "blue"
-    )
-  })
-  output$serie_temporal_tb6 <- renderPlotly({
-    plot <- plot.serie(tb6(), "mes_ano", input$select_indicador_tb6,"Ano-Mês",input$select_indicador)
-    ggplotly(plot)
-  })  
-  # Tabela 7
-  output$Dist_PEA_Total <- renderValueBox({
-    valueBox(
-      round(tb7()$perc_Total[tb7()$AAMM == input$select_mes],1), "Distribuição da PEA Total",color = "blue"
-    )
-  })
-  output$Dist_PEA_Homens <- renderValueBox({
-    valueBox(
-      round(tb7()$perc_Homens[tb7()$AAMM == input$select_mes],1), "Distribuição da PEA Homens",color = "blue"
-    )
-  })
-  output$Dist_PEA_Mulheres <- renderValueBox({
-    valueBox(
-      round(tb7()$perc_Mulheres[tb7()$AAMM == input$select_mes],1), "Distribuição da PEA Mulheres",color = "blue"
-    )
-  })
-  output$Dist_PEA_14_e_15 <- renderValueBox({
-    valueBox(
-      round(tb7()$perc_fxetaria_14a15anos[tb7()$AAMM == input$select_mes],1), "Distribuição da PEA 14 e 15 anos",color = "blue"
-    )
-  })
-  output$Dist_PEA_16_a_24 <- renderValueBox({
-    valueBox(
-      round(tb7()$perc_fxetaria_16a24anos[tb7()$AAMM == input$select_mes],1), "Distribuição da PEA 16 a 24 anos",color = "blue"
-    )
-  })
-  output$Dist_PEA_25_a_39 <- renderValueBox({
-    valueBox(
-      round(tb7()$perc_fxetaria_25a39anos[tb7()$AAMM == input$select_mes],1), "Distribuição da PEA 25 a 39 anos",color = "blue"
-    )
-  })
-  output$Dist_PEA_40_a_49 <- renderValueBox({
-    valueBox(
-      round(tb7()$perc_fxetaria_40a49anos[tb7()$AAMM == input$select_mes],1), "Distribuição da PEA 40 a 49 anos",color = "blue"
-    )
-  })
-  output$Dist_PEA_50_a_59 <- renderValueBox({
-    valueBox(
-      round(tb7()$perc_fxetaria_50a59anos[tb7()$AAMM == input$select_mes],1), "Distribuição da PEA 50 a 59 anos",color = "blue"
-    )
-  })
-  output$Dist_PEA_60 <- renderValueBox({
-    valueBox(
-      round(tb7()$perc_fxetaria_60anosemais[tb7()$AAMM == input$select_mes],1), "Distribuição da PEA 60 anos e mais",color = "blue"
-    )
-  })
-  output$Dist_PEA_Chefe <- renderValueBox({
-    valueBox(
-      round(tb7()$perc_chefe[tb7()$AAMM == input$select_mes],1), "Distribuição da PEA Chefe",color = "blue"
-    )
-  })
-  output$Dist_PEA_Demais_membros <- renderValueBox({
-    valueBox(
-      round(tb7()$perc_demais_membros[tb7()$AAMM == input$select_mes],1), "Distribuição da PEA Demais Membros",color = "blue"
-    )
-  })
-  output$Dist_PEA_Negros <- renderValueBox({
-    valueBox(
-      round(tb7()$perc_negro[tb7()$AAMM == input$select_mes],1), "Distribuição da PEA Negros",color = "blue"
-    )
-  })
-  output$Dist_PEA_Nao_Negros <- renderValueBox({
-    valueBox(
-      round(tb7()$perc_nao_negro[tb7()$AAMM == input$select_mes],1), "Distribuição da PEA Não-Negros",color = "blue"
-    )
-  })
-  output$Dist_PEA_Trab_Anteriro_Sim <- renderValueBox({
-    valueBox(
-      round(tb7()$perc_trab_anterior_sim[tb7()$AAMM == input$select_mes],1), "Distribuição da PEA Trabalho Anterior Sim",color = "blue"
-    )
-  })
-  output$Dist_PEA_Trab_Anteriro_Nao <- renderValueBox({
-    valueBox(
-      round(tb7()$perc_trab_anterior_nao[tb7()$AAMM == input$select_mes],1), "Distribuição da PEA Trabalho Anterior Não",color = "blue"
-    )
-  })
-  output$serie_temporal_tb7 <- renderPlotly({
-    plot <- plot.serie(tb7(), "mes_ano", input$select_indicador_tb7,"Ano-Mês",input$select_indicador_tb7)
-    ggplotly(plot)
-  })
-  # Tabela 8
-  output$Est_Nv_Ocup_Total <- renderValueBox({
-    valueBox(
-      round(tb8()$total[tb8()$AAMM == input$select_mes],0), "Estimativa do Nível de Ocupação Total Por Setor de Atividade",color = "blue"
-    )
-  })
-  output$Ind_Nv_Ocup_Total <- renderValueBox({
-    valueBox(
-      round(tb8()$ind_total[tb8()$AAMM == input$select_mes],1), "Índice do Nível de Ocupação Total",color = "blue"
-    )
-  })
-  output$Est_Nv_Ocup_Industria <- renderValueBox({
-    valueBox(
-      round(tb8()$industria[tb8()$AAMM == input$select_mes],0), "Estimativa do Nível de Ocupação Indústria de Transformação",color = "blue"
-    )
-  })
-  output$Ind_Nv_Ocup_Industria <- renderValueBox({
-    valueBox(
-      round(tb8()$ind_indtrans[tb8()$AAMM == input$select_mes],1), "Índice do Nível de Ocupação Indústria de Transformação",color = "blue"
-    )
-  })
-  output$Est_Nv_Ocup_Construcao <- renderValueBox({
-    valueBox(
-      round(tb8()$construcao[tb8()$AAMM == input$select_mes],0), "Estimativa do Nível de Ocupação Construção",color = "blue"
-    )
-  })
-  output$Ind_Nv_Ocup_Construcao <- renderValueBox({
-    valueBox(
-      round(tb8()$ind_constr[tb8()$AAMM == input$select_mes],1), "Índice do Nível de Ocupação Construção",color = "blue"
-    )
-  })
-  output$Est_Nv_Ocup_Comercio <- renderValueBox({
-    valueBox(
-      round(tb8()$comercio[tb8()$AAMM == input$select_mes],0), "Estimativa do Nível de Ocupação Comércio; Reparação de Veículos Automotores e Motocicletas",color = "blue"
-    )
-  })
-  output$Ind_Nv_Ocup_Comercio <- renderValueBox({
-    valueBox(
-      round(tb8()$ind_comerc[tb8()$AAMM == input$select_mes],1), "Índice do Nível de Ocupação Comércio; Reparação de Veículos Automotores e Motocicletas",color = "blue"
-    )
-  })
-  output$Est_Nv_Ocup_Servico <- renderValueBox({
-    valueBox(
-      round(tb8()$servico[tb8()$AAMM == input$select_mes],0), "Estimativa do Nível de Ocupação Serviço",color = "blue"
-    )
-  })
-  output$Ind_Nv_Ocup_Servico <- renderValueBox({
-    valueBox(
-      round(tb8()$ind_servicos[tb8()$AAMM == input$select_mes],1), "Índice do Nível de Ocupação Serviço",color = "blue"
-    )
-  })
-  output$Est_Nv_Ocup_admpub <- renderValueBox({
-    valueBox(
-      round(tb8()$admpub_defesa_segursocial[tb8()$AAMM == input$select_mes],0), "Estimativa do Nível de Ocupação Adm. Pública, defesa e seguridade social",color = "blue"
-    )
-  })
-  output$Ind_Nv_Ocup_admpub <- renderValueBox({
-    valueBox(
-      round(tb8()$ind_admpub[tb8()$AAMM == input$select_mes],1), "Índice do Nível de Ocupação Adm. Pública, Defesa e Seguridade Social",color = "blue"
-    )
-  })
-  output$serie_temporal_tb8 <- renderPlotly({
-    plot <- plot.serie(tb8(), "mes_ano", input$select_indicador_tb8,"Ano-Mês",input$select_indicador_tb8)
-    ggplotly(plot)
-  })
-  # Tabela 9
-  output$Dist_Ocup_Total <- renderValueBox({
-    valueBox(
-      round(tb9()$perc_total[tb9()$AAMM == input$select_mes],1), "Distribuição de Ocupação Total Por Setor de Atividade",color = "blue"
-    )
-  })
-  output$Dist_Ocup_Industria <- renderValueBox({
-    valueBox(
-      round(tb9()$perc_indtrans[tb9()$AAMM == input$select_mes],1), "Distribuição de Ocupação Indústria de Transformação",color = "blue"
-    )
-  })
-  output$Dist_Ocup_Construcao <- renderValueBox({
-    valueBox(
-      round(tb9()$perc_constr[tb9()$AAMM == input$select_mes],1), "Distribuição de Ocupação Construção",color = "blue"
-    )
-  })
-  output$Dist_Ocup_Comercio <- renderValueBox({
-    valueBox(
-      round(tb9()$perc_comerc[tb9()$AAMM == input$select_mes],1), "Distribuição de Ocupação Comércio; Reparação de Veículos Automotores e Motocicletas",color = "blue"
-    )
-  })
-  output$Dist_Ocup_Servico <- renderValueBox({
-    valueBox(
-      round(tb9()$perc_servicos[tb9()$AAMM == input$select_mes],1), "Distribuição de Ocupação Serviço",color = "blue"
-    )
-  })
-  output$Dist_Ocup_admpub <- renderValueBox({
-    valueBox(
-      round(tb9()$perc_admpub[tb9()$AAMM == input$select_mes],1), "Distribuição de Ocupação Adm. Pública, Defesa e Seguridade Social",color = "blue"
-    )
-  })
-  output$serie_temporal_tb9 <- renderPlotly({
-    plot <- plot.serie(tb9(), "mes_ano", input$select_indicador_tb9,"Ano-Mês",input$select_indicador_tb9)
-    ggplotly(plot)
-  })
-  # Tabela 10
-  output$Ind_Nv_Ocup_Total_2 <- renderValueBox({
-    valueBox(
-      round(tb10()$ind_total[tb10()$AAMM == input$select_mes],1), "Índice Total do Nível de Ocupação, Por setor e CNAE 2.0 Domiciliar(1)",color = "blue"
-    )
-  })
-  output$Ind_Nv_Ocup_Industria_2 <- renderValueBox({
-    valueBox(
-      round(tb10()$ind_indtrans[tb10()$AAMM == input$select_mes],1), "Índice do Nível de Ocupação Indústria de Transformação",color = "blue"
-    )
-  })
-  output$Ind_Nv_Ocup_Construcao_2 <- renderValueBox({
-    valueBox(
-      round(tb10()$ind_constr[tb10()$AAMM == input$select_mes],1), "Índice do Nível de Ocupação Construção",color = "blue"
-    )
-  })
-  output$Ind_Nv_Ocup_Comercio_2 <- renderValueBox({
-    valueBox(
-      round(tb10()$ind_comerc[tb10()$AAMM == input$select_mes],1), "Índice do Nível de Ocupação Comércio; Reparação de Veículos Automotores e Motocicletas",color = "blue"
-    )
-  })
-  output$Ind_Nv_Ocup_Servico_2 <- renderValueBox({
-    valueBox(
-      round(tb10()$ind_servicos[tb10()$AAMM == input$select_mes],1), "Índice do Nível de Ocupação Serviços",color = "blue"
-    )
-  })
-  output$Ind_Nv_Ocup_Transporte <- renderValueBox({
-    valueBox(
-      round(tb10()$ind_transporte_armaz_cor[tb10()$AAMM == input$select_mes],1), "Índice do Nível de Ocupação Transporte, Armazenagem e Correio",color = "blue"
-    )
-  })
-  output$Ind_Nv_Ocup_Informacao <- renderValueBox({
-    valueBox(
-      round(tb10()$ind_inform_comunicacao[tb10()$AAMM == input$select_mes],1), "Índice do Nível de Ocupação Informação e Comunicação",color = "blue"
-    )
-  })
-  output$Ind_Nv_Ocup_Atividades <- renderValueBox({
-    valueBox(
-      round(tb10()$ind_ativ_adm_serv_comp[tb10()$AAMM == input$select_mes],1), "Índice do Nível de Ocupação Atividades Administrativas e Serviços Complementares",color = "blue"
-    )
-  })
-  output$Ind_Nv_Ocup_Adm_Publica_T <- renderValueBox({
-    valueBox(
-      round(tb10()$ind_adm_publica_defesa[tb10()$AAMM == input$select_mes],1), "Índice Total do Nível de Ocupação Administração Pública, Defesa e Seguridade Social; Educação, Saúde Humana e Serviços Sociais",color = "blue"
-    )
-  })
-  output$Ind_Nv_Ocup_Adm_Publica <- renderValueBox({
-    valueBox(
-      round(tb10()$ind_admpub[tb10()$AAMM == input$select_mes],1), "Índice do Nível de Ocupação Administração Pública, Defesa e Seguridade Social",color = "blue"
-    )
-  })
-  output$Ind_Nv_Ocup_Servico_Educacao <- renderValueBox({
-    valueBox(
-      round(tb10()$ind_educacao[tb10()$AAMM == input$select_mes],1), "Índice do Nível de Ocupação Educação",color = "blue"
-    )
-  })
-  output$Ind_Nv_Ocup_Saude <- renderValueBox({
-    valueBox(
-      round(tb10()$ind_saude[tb10()$AAMM == input$select_mes],1), "Índice do Nível de Ocupação Saúde Humana e Serviços Sociais",color = "blue"
-    )
-  })
-  output$Ind_Nv_Ocup_Alojamento <- renderValueBox({
-    valueBox(
-      round(tb10()$ind_alojam_alimentacao[tb10()$AAMM == input$select_mes],1), "Índice do Nível de Ocupação Alojamento e alimentação",color = "blue"
-    )
-  })
-  output$Ind_Nv_Ocup_Domestico <- renderValueBox({
-    valueBox(
-      round(tb10()$ind_serv_domestico[tb10()$AAMM == input$select_mes],1), "Índice do Nível de Ocupação Serviços Domésticos",color = "blue"
-    )
-  })
-  output$serie_temporal_tb10 <- renderPlotly({
-    plot <- plot.serie(tb10(), "mes_ano", input$select_indicador_tb10,"Ano-Mês",input$select_indicador_tb10)
-    ggplotly(plot)
-  })
-  # Tabela 11
-  output$Est_Nv_Ocup_Total_2 <- renderValueBox({
-    valueBox(
-      round(tb11()$ocupado[tb11()$AAMM == input$select_mes],0), "Estimativa do Nível de Ocupação, Por Posição na Ocupação",color = "blue"
-    )
-  })
-  output$Ind_Nv_Ocup_Total_3 <- renderValueBox({
-    valueBox(
-      round(tb11()$ind_ocup[tb11()$AAMM == input$select_mes],1), "Índice do Nível de Ocupação, Por Posição na Ocupação",color = "blue"
-    )
-  })
-  output$Est_Nv_Ocup_Assalariados_Total <- renderValueBox({
-    valueBox(
-      round(tb11()$assalariado[tb11()$AAMM == input$select_mes],0), "Estimativa do Nível de Ocupação Assalariados",color = "blue"
-    )
-  })
-  output$Ind_Nv_Ocup_Assalariados_Total <- renderValueBox({
-    valueBox(
-      round(tb11()$ind_assal_tot[tb11()$AAMM == input$select_mes],1), "Índice do Nível de Ocupação Assalariados",color = "blue"
-    )
-  })
-  output$Est_Nv_Ocup_Ass_Setor_Privado <- renderValueBox({
-    valueBox(
-      round(tb11()$setor_privado[tb11()$AAMM == input$select_mes],0), "Estimativa do Nível de Ocupação Assalariados Setor Privado",color = "blue"
-    )
-  })
-  output$Ind_Nv_Ocup_Ass_Setor_Privado <- renderValueBox({
-    valueBox(
-      round(tb11()$ind_assal_priv[tb11()$AAMM == input$select_mes],1), "Índice do Nível de Ocupação Assalariados Setor Privado",color = "blue"
-    )
-  })
-  output$Est_Nv_Ocup_Ass_Privado_C_Carteira <- renderValueBox({
-    valueBox(
-      round(tb11()$ass_priv_c_cart[tb11()$AAMM == input$select_mes],0), "Estimativa do Nível de Ocupação Assalariados Setor Privado Com Carteira Assinada",color = "blue"
-    )
-  })
-  output$Ind_Nv_Ocup_Ass_Privado_C_Carteira <- renderValueBox({
-    valueBox(
-      round(tb11()$ind_assal_priv_c_cart[tb11()$AAMM == input$select_mes],1), "Índice do Nível de Ocupação Assalariados Setor Privado Com Carteira Assinada",color = "blue"
-    )
-  })
-  output$Est_Nv_Ocup_Ass_Privado_S_Carteira <- renderValueBox({
-    valueBox(
-      round(tb11()$ass_priv_s_cart[tb11()$AAMM == input$select_mes],0), "Estimativa do Nível de Ocupação Assalariados Setor Privado Sem Carteira Assinada",color = "blue"
-    )
-  })
-  output$Ind_Nv_Ocup_Ass_Privado_S_Carteira <- renderValueBox({
-    valueBox(
-      round(tb11()$ind_assal_priv_s_cart[tb11()$AAMM == input$select_mes],1), "Índice do Nível de Ocupação Assalariados Setor Privado Sem Carteira Assinada",color = "blue"
-    )
-  })
-  output$Est_Nv_Ocup_Ass_Publico <- renderValueBox({
-    valueBox(
-      round(tb11()$ass_pub[tb11()$AAMM == input$select_mes],0), "Estimativa do Nível de Ocupação Assalariados Setor Público",color = "blue"
-    )
-  })
-  output$Ind_Nv_Ocup_Ass_Publico <- renderValueBox({
-    valueBox(
-      round(tb11()$ind_assal_publ[tb11()$AAMM == input$select_mes],1), "Índice do Nível de Ocupação Assalariados Setor Público",color = "blue"
-    )
-  })
-  output$Est_Nv_Ocup_Autonomo <- renderValueBox({
-    valueBox(
-      round(tb11()$autonomo[tb11()$AAMM == input$select_mes],0), "Estimativa do Nível de Ocupação Autônomos",color = "blue"
-    )
-  })
-  output$Ind_Nv_Ocup_Autonomo <- renderValueBox({
-    valueBox(
-      round(tb11()$ind_autonomos[tb11()$AAMM == input$select_mes],1), "Índice do Nível de Ocupação Autônomos",color = "blue"
-    )
-  })
-  output$Est_Nv_Ocup_Empregado_Domestico <- renderValueBox({
-    valueBox(
-      round(tb11()$empreg_domestico[tb11()$AAMM == input$select_mes],0), "Estimativa do Nível de Ocupação Empregados Domésticos",color = "blue"
-    )
-  })
-  output$Ind_Nv_Ocup_Empregado_Domestico <- renderValueBox({
-    valueBox(
-      round(tb11()$ind_emp_dom[tb11()$AAMM == input$select_mes],1), "Índice do Nível de Ocupação Empregados Domésticos",color = "blue"
-    )
-  })
-  output$serie_temporal_tb11 <- renderPlotly({
-    plot <- plot.serie(tb11(), "mes_ano", input$select_indicador_tb11,"Ano-Mês",input$select_indicador_tb11)
-    ggplotly(plot)
-  })
-  # Tabela 12
-  output$Dist_Ocup_Total_2 <- renderValueBox({
-    valueBox(
-      round(tb12()$perc_ocupado[tb12()$AAMM == input$select_mes],1), "Distribuição dos Ocupados, Por Posição na Ocupação",color = "blue"
-    )
-  })
-  output$Dist_Ocup_Assalariados_Total <- renderValueBox({
-    valueBox(
-      round(tb12()$perc_assalariado[tb12()$AAMM == input$select_mes],1), "Distribuição dos Ocupados Assalariados",color = "blue"
-    )
-  })
-  output$Dist_Ocup_Ass_Setor_Privado <- renderValueBox({
-    valueBox(
-      round(tb12()$perc_setor_privado[tb12()$AAMM == input$select_mes],1), "Distribuição dos Ocupados Assalariados Setor Privado",color = "blue"
-    )
-  })
-  output$Dist_Ocup_Ass_Privado_C_Carteira <- renderValueBox({
-    valueBox(
-      round(tb12()$perc_ass_priv_c_cart[tb12()$AAMM == input$select_mes],1), "Distribuição dos Ocupados Assalariados Setor Privado Com Carteira Assinada",color = "blue"
-    )
-  })
-  output$Dist_Ocup_Ass_Privado_S_Carteira <- renderValueBox({
-    valueBox(
-      round(tb12()$perc_ass_priv_s_cart[tb12()$AAMM == input$select_mes],1), "Distribuição dos Ocupados Assalariados Setor Privado Sem Carteira Assinada",color = "blue"
-    )
-  })
-  output$Dist_Ocup_Ass_Publico <- renderValueBox({
-    valueBox(
-      round(tb12()$perc_ass_pub[tb12()$AAMM == input$select_mes],1), "Distribuição dos Ocupados Assalariados Setor Público",color = "blue"
-    )
-  })
-  output$Dist_Ocup_Autonomo <- renderValueBox({
-    valueBox(
-      round(tb12()$perc_autonomo[tb12()$AAMM == input$select_mes],1), "Distribuição dos Ocupados Autônomos",color = "blue"
-    )
-  })
-  output$Dist_Ocup_Empregado_Domestico <- renderValueBox({
-    valueBox(
-      round(tb12()$perc_empreg_domestico[tb12()$AAMM == input$select_mes],1), "Distribuição dos Ocupados Empregados Domésticos",color = "blue"
-    )
-  })
-  output$serie_temporal_tb12 <- renderPlotly({
-    plot <- plot.serie(tb12(), "mes_ano", input$select_indicador_tb12,"Ano-Mês",input$select_indicador_tb12)
-    ggplotly(plot)
-  })
-  # Tabela 13
-  output$Dist_Ocup_Total_3 <- renderValueBox({
-    valueBox(
-      round(tb13()$perc_total[tb13()$AAMM == input$select_mes],1), "Distribuição dos Ocupados Total",color = "blue"
-    )
-  })
-  output$Dist_Ocup_Homens <- renderValueBox({
-    valueBox(
-      round(tb13()$perc_hom[tb13()$AAMM == input$select_mes],1), "Distribuição dos Ocupados Homens",color = "blue"
-    )
-  })
-  output$Dist_Ocup_Mulheres <- renderValueBox({
-    valueBox(
-      round(tb13()$perc_mul[tb13()$AAMM == input$select_mes],1), "Distribuição dos Ocupados Mulheres",color = "blue"
-    )
-  })
-  output$Dist_Ocup_14_e_15 <- renderValueBox({
-    valueBox(
-      round(tb13()$perc_fxetaria_14a15anos[tb13()$AAMM == input$select_mes],1), "Distribuição dos Ocupados 14 e 15 anos",color = "blue"
-    )
-  })
-  output$Dist_Ocup_16_a_24 <- renderValueBox({
-    valueBox(
-      round(tb13()$perc_fxetaria_16a24anos[tb13()$AAMM == input$select_mes],1), "Distribuição dos Ocupados 16 a 24 anos",color = "blue"
-    )
-  })
-  output$Dist_Ocup_25_a_39 <- renderValueBox({
-    valueBox(
-      round(tb13()$perc_fxetaria_25a39anos[tb13()$AAMM == input$select_mes],1), "Distribuição dos Ocupados 25 a 39 anos",color = "blue"
-    )
-  })
-  output$Dist_Ocup_40_a_49 <- renderValueBox({
-    valueBox(
-      round(tb13()$perc_fxetaria_40a49anos[tb13()$AAMM == input$select_mes],1), "Distribuição dos Ocupados 40 a 49 anos",color = "blue"
-    )
-  })
-  output$Dist_Ocup_50_a_59 <- renderValueBox({
-    valueBox(
-      round(tb13()$perc_fxetaria_50a59anos[tb13()$AAMM == input$select_mes],1), "Distribuição dos Ocupados 50 a 59 anos",color = "blue"
-    )
-  })
-  output$Dist_Ocup_60 <- renderValueBox({
-    valueBox(
-      round(tb13()$perc_fxetaria_60anosemais[tb13()$AAMM == input$select_mes],1), "Distribuição dos Ocupados 60 anos e mais",color = "blue"
-    )
-  })
-  output$Dist_Ocup_Chefe <- renderValueBox({
-    valueBox(
-      round(tb13()$perc_chefe[tb13()$AAMM == input$select_mes],1), "Distribuição dos Ocupados Chefe",color = "blue"
-    )
-  })
-  output$Dist_Ocup_Demais_membros <- renderValueBox({
-    valueBox(
-      round(tb13()$perc_demais_membros[tb13()$AAMM == input$select_mes],1), "Distribuição dos Ocupados Demais Membros",color = "blue"
-    )
-  })
-  output$Dist_Ocup_Negros <- renderValueBox({
-    valueBox(
-      round(tb13()$perc_negro[tb13()$AAMM == input$select_mes],1), "Distribuição dos Ocupados Negros",color = "blue"
-    )
-  })
-  output$Dist_Ocup_Nao_Negros <- renderValueBox({
-    valueBox(
-      round(tb13()$perc_nao_negro[tb13()$AAMM == input$select_mes],1), "Distribuição dos Ocupados Não-Negros",color = "blue"
-    )
-  })
-  output$Dist_Ocup_Trab_Anteriro_Sim <- renderValueBox({
-    valueBox(
-      round(tb13()$perc_sim[tb13()$AAMM == input$select_mes],1), "Distribuição dos Ocupados Trabalho Anterior Sim",color = "blue"
-    )
-  })
-  output$Dist_Ocup_Trab_Anteriro_Nao <- renderValueBox({
-    valueBox(
-      round(tb13()$perc_nao[tb13()$AAMM == input$select_mes],1), "Distribuição dos Ocupados Trabalho Anterior Não",color = "blue"
-    )
-  })
-  output$serie_temporal_tb13 <- renderPlotly({
-    plot <- plot.serie(tb13(), "mes_ano", input$select_indicador_tb13,"Ano-Mês",as.character(input$select_indicador_tb13))
-    ggplotly(plot)
-  })
-  # Tabela 14
-  output$serie_temporal_tb14 <- renderPlotly({
-
-  })
-  # Tabela 15
-  output$scatter_15 <- renderPlotly({
-    
-  })
-  # Tabela 16
-  output$scatter_16 <- renderPlotly({
-    
-  })
-  # Tabela 17
-  output$scatter_17 <- renderPlotly({
-    
-  })
-  # Tabela 18
-  output$scatter_18 <- renderPlotly({
-    
-  })
-  # Tabela 19
-  output$Dist_Inativa_Total <- renderValueBox({
-    valueBox(
-      round(tb19()$perc_total[tb19()$AAMM == input$select_mes],1), "Distribuição da População Inativa de 14 anos e mais, por atributos pessoais e experiência anterior de trabalho",color = "blue"
-    )
-  })
-  output$Dist_Inativa_Homens <- renderValueBox({
-    valueBox(
-      round(tb19()$perc_hom[tb19()$AAMM == input$select_mes],1), "Distribuição da População Inativa Homens",color = "blue"
-    )
-  })
-  output$Dist_Inativa_Mulheres <- renderValueBox({
-    valueBox(
-      round(tb19()$perc_mul[tb19()$AAMM == input$select_mes],1), "Distribuição da População Inativa Mulheres",color = "blue"
-    )
-  })
-  output$Dist_Inativa_14_e_15 <- renderValueBox({
-    valueBox(
-      round(tb19()$perc_fxetaria_14a15anos[tb19()$AAMM == input$select_mes],1), "Distribuição da População Inativa 14 e 15 anos",color = "blue"
-    )
-  })
-  output$Dist_Inativa_16_a_24 <- renderValueBox({
-    valueBox(
-      round(tb19()$perc_fxetaria_16a24anos[tb19()$AAMM == input$select_mes],1), "Distribuição da População Inativa 16 a 24 anos",color = "blue"
-    )
-  })
-  output$Dist_Inativa_25_a_39 <- renderValueBox({
-    valueBox(
-      round(tb19()$perc_fxetaria_25a39anos[tb19()$AAMM == input$select_mes],1), "Distribuição da População Inativa 25 a 39 anos",color = "blue"
-    )
-  })
-  output$Dist_Inativa_40_a_49 <- renderValueBox({
-    valueBox(
-      round(tb19()$perc_fxetaria_40a49anos[tb19()$AAMM == input$select_mes],1), "Distribuição da População Inativa 40 a 49 anos",color = "blue"
-    )
-  })
-  output$Dist_Inativa_50_a_59 <- renderValueBox({
-    valueBox(
-      round(tb19()$perc_fxetaria_50a59anos[tb19()$AAMM == input$select_mes],1), "Distribuição da População Inativa 50 a 59 anos",color = "blue"
-    )
-  })
-  output$Dist_Inativa_60 <- renderValueBox({
-    valueBox(
-      round(tb19()$perc_fxetaria_60anosemais[tb19()$AAMM == input$select_mes],1), "Distribuição da População Inativa 60 anos e mais",color = "blue"
-    )
-  })
-  output$Dist_Inativa_Chefe <- renderValueBox({
-    valueBox(
-      round(tb19()$perc_chefe[tb19()$AAMM == input$select_mes],1), "Distribuição da População Inativa Chefe",color = "blue"
-    )
-  })
-  output$Dist_Inativa_Demais_membros <- renderValueBox({
-    valueBox(
-      round(tb19()$perc_demais_membros[tb19()$AAMM == input$select_mes],1), "Distribuição da População Inativa Demais Membros",color = "blue"
-    )
-  })
-  output$Dist_Inativa_Negros <- renderValueBox({
-    valueBox(
-      round(tb19()$perc_negro[tb19()$AAMM == input$select_mes],1), "Distribuição da População Inativa Negros",color = "blue"
-    )
-  })
-  output$Dist_Inativa_Nao_Negros <- renderValueBox({
-    valueBox(
-      round(tb19()$perc_nao_negro[tb19()$AAMM == input$select_mes],1), "Distribuição da População Inativa Não-Negros",color = "blue"
-    )
-  })
-  output$Dist_Inativa_Trab_Anteriro_Sim <- renderValueBox({
-    valueBox(
-      round(tb19()$perc_sim[tb19()$AAMM == input$select_mes],1), "Distribuição da População Inativa Trabalho Anterior Sim",color = "blue"
-    )
-  })
-  output$Dist_Inativa_Trab_Anteriro_Nao <- renderValueBox({
-    valueBox(
-      round(tb19()$perc_nao[tb19()$AAMM == input$select_mes],1), "Distribuição da População Inativa Trabalho Anterior Não",color = "blue"
-    )
-  })
-  output$serie_temporal_tb19 <- renderPlotly({
-    plot <- plot.serie(tb19(), "mes_ano", input$select_indicador_tb19,"Ano-Mês",as.character(input$select_indicador_tb19))
-    ggplotly(plot)
-  })
-  # Tabela 20
-  output$Dist_Inativa_Total_2 <- renderValueBox({
-    valueBox(
-      round(tb20()$perc_total[tb20()$AAMM == input$select_mes],1), "Distribuição da População Inativa de 14 Anos e Mais, Por Faixa de Tempo em que Perdeu ou Deixou o Último Trabalho",color = "blue"
-    )
-  })
-  output$Dist_Inativa_6meses <- renderValueBox({
-    valueBox(
-      round(tb20()$perc_ate6meses[tb20()$AAMM == input$select_mes],1), "Distribuição da População Inativa Até 6 Meses",color = "blue"
-    )
-  })
-  output$Dist_Inativa_6a12meses <- renderValueBox({
-    valueBox(
-      round(tb20()$perc_maisde6mesesa1ano[tb20()$AAMM == input$select_mes],1), "Distribuição da População Inativa Mais de 6 a 12 Meses",color = "blue"
-    )
-  })
-  output$Dist_Inativa_1a2anos <- renderValueBox({
-    valueBox(
-      round(tb20()$perc_maisde1a2anos[tb20()$AAMM == input$select_mes],1), "Distribuição da População Inativa Mais de 1 a 2 Anos",color = "blue"
-    )
-  })
-  output$Dist_Inativa_2a3anos <- renderValueBox({
-    valueBox(
-      round(tb20()$perc_maisde2a3anos[tb20()$AAMM == input$select_mes],1), "Distribuição da População Inativa Mais de 2 a 3 Anos",color = "blue"
-    )
-  })
-  output$Dist_Inativa_3a5anos <- renderValueBox({
-    valueBox(
-      round(tb20()$perc_maisde3a5anos[tb20()$AAMM == input$select_mes],1), "Distribuição da População Inativa Mais de 3 a 5 Anos",color = "blue"
-    )
-  })
-  output$Dist_Inativa_5anos <- renderValueBox({
-    valueBox(
-      round(tb20()$perc_maisde5anos[tb20()$AAMM == input$select_mes],1), "Distribuição da População Inativa Mais de 5 Anos",color = "blue"
-    )
-  })
-  output$serie_temporal_tb20 <- renderPlotly({
-    plot <- plot.serie(tb20(), "mes_ano", input$select_indicador_tb20,"Ano-Mês",as.character(input$select_indicador_tb20))
-    ggplotly(plot)
-  })
-  # Tabela 21
-  output$Dist_Inativa_Total_3 <- renderValueBox({
-    valueBox(
-      round(tb21()$perc_total[tb21()$AAMM == input$select_mes],1), "Distribuição da População Inativa de 14 Anos e Mais, Por Principal Condição de Atividade",color = "blue"
-    )
-  })
-  output$Dist_Inativa_Aposentado <- renderValueBox({
-    valueBox(
-      round(tb21()$perc_aposent[tb21()$AAMM == input$select_mes],1), "Distribuição da População Inativa Aposentada",color = "blue"
-    )
-  })
-  output$Dist_Inativa_Estudante <- renderValueBox({
-    valueBox(
-      round(tb21()$perc_estud[tb21()$AAMM == input$select_mes],1), "Distribuição da População Inativa Estudante",color = "blue"
-    )
-  })
-  output$Dist_Inativa_Domestico <- renderValueBox({
-    valueBox(
-      round(tb21()$perc_dedi_afazerdomest[tb21()$AAMM == input$select_mes],1), "Distribuição da População Inativa Dedicada a afazeres domésticos",color = "blue"
-    )
-  })
-  output$Dist_Inativa_Licenciado <- renderValueBox({
-    valueBox(
-      round(tb21()$perc_lic_saude[tb21()$AAMM == input$select_mes],1), "Distribuição da População Inativa Licenciado por saúde",color = "blue"
-    )
-  })
-  output$Dist_Inativa_Licenciado <- renderValueBox({
-    valueBox(
-      round(tb21()$perc_outros[tb21()$AAMM == input$select_mes],1), "Distribuição da População Outros",color = "blue"
-    )
-  })
-  output$serie_temporal_tb21 <- renderPlotly({
-    plot <- plot.serie(tb21(), "mes_ano", input$select_indicador_tb21,"Ano-Mês",as.character(input$select_indicador_tb21))
-    ggplotly(plot)
-  })
-  # Tabela Texto
-  output$Tx_Desemp_Total_3 <- renderValueBox({
-    valueBox(
-      round(tb_texto()$Total[tb_texto()$AAMM == input$select_mes],1), "Taxa de Desemprego Total, por grupos de regiões administrativas",color = "blue"
-    )
-  })
-  output$Grupo_1_2 <- renderValueBox({
-    valueBox(
-      round(tb_texto()$Grupo_1[tb_texto()$AAMM == input$select_mes],1), "Grupo 1",color = "blue"
-    )
-  })
-  output$Grupo_2_2 <- renderValueBox({
-    valueBox(
-      round(tb_texto()$Grupo_2[tb_texto()$AAMM == input$select_mes],1), "Grupo 2",color = "blue"
-    )
-  })
-  output$Grupo_3_2 <- renderValueBox({
-    valueBox(
-      round(tb_texto()$Grupo_3[tb_texto()$AAMM == input$select_mes],1), "Grupo 3",color = "blue"
-    )
-  })
-  output$Grupo_4_2 <- renderValueBox({
-    valueBox(
-      round(tb_texto()$Grupo_4[tb_texto()$AAMM == input$select_mes],1), "Grupo 4",color = "blue"
-    )
-  })
-  output$serie_temporal_tbtexto <- renderPlotly({
-    plot <- plot.serie(tb_texto(), "mes_ano", input$select_indicador_tbtexto,"Ano-Mês",input$select_indicador_tbtexto)
-    ggplotly(plot)
-  })
-}
+  dashboardBody(
+    tabItems(
+      tabItem(tabName = "tab1",
+              fluidRow(
+                box(width = 2,
+                    selectInput(inputId = "select_indicador_tb1", label = "Indicador", 
+                                choices = n_tb1, 
+                                selected = n_tb1)),
+                valueBoxOutput(width = 2, outputId = "PIA"),
+                valueBoxOutput(width = 2, outputId = "Ind_PIA"),
+                valueBoxOutput(width = 2, outputId = "PEA"),
+                valueBoxOutput(width = 2, outputId = "Ind_PEA"),
+                valueBoxOutput(width = 2, outputId = "Ocupado"),
+                valueBoxOutput(width = 2, outputId = "Ind_Ocupado"),
+                valueBoxOutput(width = 2, outputId = "Desempregado"),
+                valueBoxOutput(width = 2, outputId = "Ind_Desempregado"),
+                valueBoxOutput(width = 2, outputId = "Inativo"),
+                valueBoxOutput(width = 2, outputId = "Ind_Inativo"),
+                valueBoxOutput(width = 2, outputId = "Total")
+              ),
+              fluidRow(
+                column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb1"))
+              )
+      ),
+      # Tabela 2
+      tabItem(
+        tabName = "tab2",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_indicador_tb2", label = "Indicador", 
+                          choices = n_tb2, 
+                          selected = n_tb2[1])),
+          
+          valueBoxOutput(width = 2, outputId = "Desemp_Total"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp"),
+          valueBoxOutput(width = 2, outputId = "Desemp_Aberto"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_Aberto"),
+          valueBoxOutput(width = 2, outputId = "Desemp_Oculto"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_Oculto"),
+          valueBoxOutput(width = 2, outputId = "Desemp_Oculto_Precario"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_Oculto_Precario"),
+          valueBoxOutput(width = 2, outputId = "Desemp_Oculto_Desalento"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_Oculto_Desalento")
+        ),
+        fluidRow(
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb2"))
+        )
+      ),
+      # Tabela 3
+      tabItem(
+        tabName = "tab3",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_indicador_tb3", label = "Indicador", 
+                          choices = n_tb3, 
+                          selected = n_tb3[1])),
+          
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_Total"),
+          valueBoxOutput(width = 2, outputId = "Grupo_1"),
+          valueBoxOutput(width = 2, outputId = "Grupo_2"),
+          valueBoxOutput(width = 2, outputId = "Grupo_3"),
+          valueBoxOutput(width = 2, outputId = "Grupo_4")
+        ),
+        fluidRow(
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb3"))
+        )
+      ),
+      # Tabela 4
+      tabItem(
+        tabName = "tab4",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_indicador_tb4", label = "Indicador", 
+                          choices = n_tb4, 
+                          selected = n_tb4[1])),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_Total_2"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_Homens"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_Mulheres"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_14_e_15"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_16_a_24"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_25_a_39"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_40_a_49"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_50_a_59"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_60"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_Chefe"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_Demais_membros"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_Negros"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_Nao_Negros"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_Trab_Anteriro_Sim"),
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_Trab_Anteriro_Nao")
+        ),
+        fluidRow(
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb4"))
+        )
+      ),
+      # Tabela 5
+      tabItem(
+        tabName = "tab5",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_indicador_tb5", label = "Indicador", 
+                          choices = n_tb5, 
+                          selected = n_tb5[1])),
+          valueBoxOutput(width = 2, outputId = "Tx_Particip_Total"),
+          valueBoxOutput(width = 2, outputId = "Tx_Particip_Homens"),
+          valueBoxOutput(width = 2, outputId = "Tx_Particip_Mulheres"),
+          valueBoxOutput(width = 2, outputId = "Tx_Particip_14_e_15"),
+          valueBoxOutput(width = 2, outputId = "Tx_Particip_16_a_24"),
+          valueBoxOutput(width = 2, outputId = "Tx_Particip_25_a_39"),
+          valueBoxOutput(width = 2, outputId = "Tx_Particip_40_a_49"),
+          valueBoxOutput(width = 2, outputId = "Tx_Particip_50_a_59"),
+          valueBoxOutput(width = 2, outputId = "Tx_Particip_60"),
+          valueBoxOutput(width = 2, outputId = "Tx_Particip_Chefe"),
+          valueBoxOutput(width = 2, outputId = "Tx_Particip_Demais_membros"),
+          valueBoxOutput(width = 2, outputId = "Tx_Particip_Negros"),
+          valueBoxOutput(width = 2, outputId = "Tx_Particip_Nao_Negros")
+        ),
+        fluidRow(
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb5"))
+          
+        )
+      ),
+      # Tabela 6
+      tabItem(
+        tabName = "tab6",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_indicador_tb6", label = "Indicador", 
+                          choices = n_tb6, 
+                          selected = n_tb6[1])),
+          valueBoxOutput(width = 2, outputId = "Dist_Desemp_Total"),
+          valueBoxOutput(width = 2, outputId = "Dist_Desemp_Homens"),
+          valueBoxOutput(width = 2, outputId = "Dist_Desemp_Mulheres"),
+          valueBoxOutput(width = 2, outputId = "Dist_Desemp_14_e_15"),
+          valueBoxOutput(width = 2, outputId = "Dist_Desemp_16_a_24"),
+          valueBoxOutput(width = 2, outputId = "Dist_Desemp_25_a_39"),
+          valueBoxOutput(width = 2, outputId = "Dist_Desemp_40_a_49"),
+          valueBoxOutput(width = 2, outputId = "Dist_Desemp_50_a_59"),
+          valueBoxOutput(width = 2, outputId = "Dist_Desemp_60"),
+          valueBoxOutput(width = 2, outputId = "Dist_Desemp_Chefe"),
+          valueBoxOutput(width = 2, outputId = "Dist_Desemp_Demais_membros"),
+          valueBoxOutput(width = 2, outputId = "Dist_Desemp_Negros"),
+          valueBoxOutput(width = 2, outputId = "Dist_Desemp_Nao_Negros"),
+          valueBoxOutput(width = 2, outputId = "Dist_Desemp_Trab_Anteriro_Sim"),
+          valueBoxOutput(width = 2, outputId = "Dist_Desemp_Trab_Anteriro_Nao")
+        ),
+        fluidRow(
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb6"))
+        )
+      ),
+      # Tabela 7
+      tabItem(
+        tabName = "tab7",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_indicador_tb7", label = "Indicador", 
+                          choices = n_tb7, 
+                          selected = n_tb7[1])),
+          valueBoxOutput(width = 2, outputId = "Dist_PEA_Total"),
+          valueBoxOutput(width = 2, outputId = "Dist_PEA_Homens"),
+          valueBoxOutput(width = 2, outputId = "Dist_PEA_Mulheres"),
+          valueBoxOutput(width = 2, outputId = "Dist_PEA_14_e_15"),
+          valueBoxOutput(width = 2, outputId = "Dist_PEA_16_a_24"),
+          valueBoxOutput(width = 2, outputId = "Dist_PEA_25_a_39"),
+          valueBoxOutput(width = 2, outputId = "Dist_PEA_40_a_49"),
+          valueBoxOutput(width = 2, outputId = "Dist_PEA_50_a_59"),
+          valueBoxOutput(width = 2, outputId = "Dist_PEA_60"),
+          valueBoxOutput(width = 2, outputId = "Dist_PEA_Chefe"),
+          valueBoxOutput(width = 2, outputId = "Dist_PEA_Demais_membros"),
+          valueBoxOutput(width = 2, outputId = "Dist_PEA_Negros"),
+          valueBoxOutput(width = 2, outputId = "Dist_PEA_Nao_Negros"),
+          valueBoxOutput(width = 2, outputId = "Dist_PEA_Trab_Anteriro_Sim"),
+          valueBoxOutput(width = 2, outputId = "Dist_PEA_Trab_Anteriro_Nao")
+        ),
+        fluidRow(
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb7"))
+        )
+      ),
+      # Tabela 8
+      tabItem(
+        tabName = "tab8",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_indicador_tb8", label = "Indicador", 
+                          choices = n_tb8, 
+                          selected = n_tb8[1])),
+          valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Total"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Total"),
+          valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Industria"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Industria"),
+          valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Construcao"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Construcao"),
+          valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Comercio"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Comercio"),
+          valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Servico"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Servico"),
+          valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_admpub"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_admpub")
+        ),
+        fluidRow(
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb8"))
+        )
+      ),
+      # Tabela 9
+      tabItem(
+        tabName = "tab9",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_indicador_tb9", label = "Indicador", 
+                          choices = n_tb9, 
+                          selected = n_tb9[1])),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Total"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Industria"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Construcao"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Comercio"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Servico"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_admpub")
+        ),
+        fluidRow(
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb9"))
+        )
+      ),
+      # Tabela 10
+      tabItem(
+        tabName = "tab10",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_indicador_tb10", label = "Indicador", 
+                          choices = n_tb10, 
+                          selected = n_tb10[1])),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Total_2"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Industria_2"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Construcao_2"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Servico_2"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Transporte"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Informacao"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Atividades"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Adm_Publica_T"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Adm_Publica"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Servico_Educacao"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Saude"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Alojamento"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Domestico")
+        ),
+        fluidRow(
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb10"))
+        )
+      ),
+      # Tabela 11
+      tabItem(
+        tabName = "tab11",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_indicador_tb11", label = "Indicador", 
+                          choices = n_tb11, 
+                          selected = n_tb11[1])),
+          valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Total_2"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Total_3"),
+          valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Assalariados_Total"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Assalariados_Total"),
+          valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Ass_Setor_Privado"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Ass_Setor_Privado"),
+          valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Ass_Privado_C_Carteira"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Ass_Privado_C_Carteira"),
+          valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Ass_Privado_S_Carteira"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Ass_Privado_S_Carteira"),
+          valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Ass_Publico"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Ass_Publico"),
+          valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Autonomo"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Autonomo"),
+          valueBoxOutput(width = 2, outputId = "Est_Nv_Ocup_Empregado_Domestico"),
+          valueBoxOutput(width = 2, outputId = "Ind_Nv_Ocup_Empregado_Domestico")
+        ),
+        fluidRow(
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb11"))
+        )
+      ),
+      # Tabela 12
+      tabItem(
+        tabName = "tab12",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_indicador_tb12", label = "Indicador", 
+                          choices = n_tb12, 
+                          selected = n_tb12[1])),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Total_2"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Assalariados_Total"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Ass_Setor_Privado"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Ass_Privado_C_Carteira"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Ass_Privado_S_Carteira"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Ass_Publico"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Autonomo"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Empregado_Domestico")
+        ),
+        fluidRow(
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb12"))
+        )
+      ),
+      # Tabela 13
+      tabItem(
+        tabName = "tab13",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_indicador_tb13", label = "Indicador", 
+                          choices = n_tb13, 
+                          selected = n_tb13[1])),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Total_3"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Homens"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Mulheres"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_14_e_15"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_16_a_24"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_25_a_39"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_40_a_49"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_50_a_59"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_60"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Chefe"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Demais_membros"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Negros"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Nao_Negros"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Trab_Anteriro_Sim"),
+          valueBoxOutput(width = 2, outputId = "Dist_Ocup_Trab_Anteriro_Nao")
+        ),
+        fluidRow(
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb13"))
+        )
+      ),
+      # Tabela 14
+      tabItem(
+        tabName = "tab14",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_indicador_tb14", label = "Indicador", 
+                          choices = n_tb14, 
+                          selected = n_tb14[1]))
+        ),
+        fluidRow(
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb14"))
+        )
+      ),
+      # Tabela 15
+      tabItem(
+        tabName = "tab15",
+        fluidRow(
+          
+        )
+      ),
+      # Tabela 16
+      tabItem(
+        tabName = "tab16",
+        fluidRow(
+          
+        )
+      ),
+      # Tabela 17
+      tabItem(
+        tabName = "tab17",
+        fluidRow(
+          
+        )
+      ),
+      # Tabela 18
+      tabItem(
+        tabName = "tab18",
+        fluidRow(
+          
+        )
+      ),
+      # Tabela 19
+      tabItem(
+        tabName = "tab19",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_indicador_tb19", label = "Indicador", 
+                          choices = n_tb19, 
+                          selected = n_tb19[1])),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Total"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Homens"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Mulheres"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_14_e_15"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_16_a_24"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_25_a_39"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_40_a_49"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_50_a_59"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_60"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Chefe"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Demais_membros"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Negros"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Nao_Negros"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Trab_Anteriro_Sim"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Trab_Anteriro_Nao")
+        ),
+        fluidRow(
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb19"))
+        )
+      ),
+      # Tabela 20
+      tabItem(
+        tabName = "tab20",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_indicador_tb20", label = "Indicador", 
+                          choices = n_tb20, 
+                          selected = n_tb20[1])),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Total_2"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_6meses"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_6a12meses"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_1a2anos"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_2a3anos"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_3a5anos"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_5anos")
+        ),
+        fluidRow(
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb20"))
+        )
+      ),
+      # Tabela 21
+      tabItem(
+        tabName = "tab21",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_indicador_tb21", label = "Indicador", 
+                          choices = n_tb21, 
+                          selected = n_tb21[1])),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Total_3"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Aposentado"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Estudante"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Domestico"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Licenciado"),
+          valueBoxOutput(width = 2, outputId = "Dist_Inativa_Outros")
+        ),
+        fluidRow(
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tb21"))
+        )
+      ),
+      # Tabela texto
+      tabItem(
+        tabName = "tab_texto",
+        fluidRow(
+          box(width = 2,
+              selectInput(inputId = "select_indicador_tbtexto", label = "Indicador", 
+                          choices = n_tbtexto, 
+                          selected = n_tbtexto[1])),
+          
+          valueBoxOutput(width = 2, outputId = "Tx_Desemp_Total_3"),
+          valueBoxOutput(width = 2, outputId = "Grupo_1_2"),
+          valueBoxOutput(width = 2, outputId = "Grupo_2_2"),
+          valueBoxOutput(width = 2, outputId = "Grupo_3_2"),
+          valueBoxOutput(width = 2, outputId = "Grupo_4_2")
+        ),
+        fluidRow(
+          column(width = 10,offset = 1,plotlyOutput(outputId = "serie_temporal_tbtexto"))
+        )
+      )
+      
+    )
+  )
+)
