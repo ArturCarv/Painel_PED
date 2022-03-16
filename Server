@@ -1,3 +1,4 @@
+
 server <- function(input, output){
   
   
@@ -2305,13 +2306,23 @@ server <- function(input, output){
       tb1()$Inativo[tb1()$AAMM == input$select_mes], "Inativo",color = "blue"
     )
   })
-  
   output$Ind_Inativo <- renderValueBox({
     valueBox(
       round(tb1()$ind_inat[tb1()$AAMM == input$select_mes],1), "Indicador Inativos",color = "blue"
     )
   })  
+  output$Tx_Particip <- renderValueBox({
+    valueBox(
+      round(tb1()$tx.partic[tb1()$AAMM == input$select_mes],1), "Taxa de Participação (PEA/PIA)",color = "blue"
+    )
+  })  
   
+  
+  output$Tx_Desemprego <- renderValueBox({
+    valueBox(
+      round(tb1()$tx.desemp[tb1()$AAMM == input$select_mes],1), "Taxa de Desemprego (DES/PEA)",color = "blue"
+    )
+  })  
   output$Total <- renderValueBox({
     valueBox(
       tb1()$pop_total[tb1()$AAMM == input$select_mes], "População Total",color = "blue"
