@@ -1,4 +1,3 @@
-
 ui <- dashboardPage(
   
   # Título
@@ -54,6 +53,8 @@ ui <- dashboardPage(
                 valueBoxOutput(width = 2, outputId = "Ind_Desempregado"),
                 valueBoxOutput(width = 2, outputId = "Inativo"),
                 valueBoxOutput(width = 2, outputId = "Ind_Inativo"),
+                valueBoxOutput(width = 2, outputId = "Tx_Particip"),
+                valueBoxOutput(width = 2, outputId = "Tx_Desemprego"),
                 valueBoxOutput(width = 2, outputId = "Total")
               ),
               fluidRow(
